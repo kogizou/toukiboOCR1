@@ -54,9 +54,16 @@ os.makedirs(app.config['TEMP_FOLDER'], exist_ok=True)
 ocr_config = {
     'temp_dir': app.config['TEMP_FOLDER'],
     'output_dir': app.config['OUTPUT_FOLDER'],
-    'dpi': 300,
-    'psm': 6,
-    'oem': 3
+    'dpi': 300,  # 高解像度設定
+    'psm': 6,    # デフォルトのページセグメンテーションモード
+    'oem': 3,    # LSTMエンジン（高精度）
+    'lang': 'jpn', # 日本語
+    # 精度向上オプション
+    'enhance_preprocessing': True,  # 前処理強化
+    'detect_orientation': True,     # 自動方向検出
+    'optimize_japanese': True,      # 日本語最適化
+    'remove_lines': True,           # 線の除去
+    'confidence_threshold': 70      # 信頼度閾値
 }
 ocr_engine = RegistryOCR(ocr_config)
 
@@ -137,7 +144,12 @@ def scan():
         ocr_settings = {
             'dpi': int(request.form.get('dpi', 300)),
             'psm': int(request.form.get('psm', 6)),
-            'oem': int(request.form.get('oem', 3))
+            'oem': int(request.form.get('oem', 3)),
+            # 追加の精度向上オプション
+            'enhance_preprocessing': 'enhance_preprocessing' in request.form,
+            'detect_orientation': 'detect_orientation' in request.form,
+            'optimize_japanese': 'optimize_japanese' in request.form,
+            'remove_lines': 'remove_lines' in request.form
         }
         
         # OCRエンジンの設定を更新
@@ -188,7 +200,11 @@ def scan():
     ocr_settings = {
         'dpi': ocr_engine.config.get('dpi', 300),
         'psm': ocr_engine.config.get('psm', 6),
-        'oem': ocr_engine.config.get('oem', 3)
+        'oem': ocr_engine.config.get('oem', 3),
+        'enhance_preprocessing': ocr_engine.config.get('enhance_preprocessing', True),
+        'detect_orientation': ocr_engine.config.get('detect_orientation', True),
+        'optimize_japanese': ocr_engine.config.get('optimize_japanese', True),
+        'remove_lines': ocr_engine.config.get('remove_lines', True)
     }
     
     # PSMオプションの定義
@@ -300,9 +316,28 @@ def original_image(filename):
 @app.route('/data')
 @login_required
 def data_management():
+    # フィルタリング条件の取得
+    filter_property = request.args.get('property', '')
+    filter_owner = request.args.get('owner', '')
+    filter_address = request.args.get('address', '')
+    
+    # ソート条件の取得
+    sort_by = request.args.get('sort', 'date')
+    sort_order = request.args.get('order', 'desc')
+    
     # データベースからすべての不動産情報を取得
     properties = db.get_all_properties()
-    return render_template('data.html', properties=properties)
+    
+    # フィルター条件を辞書にまとめる
+    filters = {
+        'property': filter_property,
+        'owner': filter_owner,
+        'address': filter_address,
+        'sort': sort_by,
+        'order': sort_order
+    }
+    
+    return render_template('data_management.html', properties=properties, filters=filters)
 
 # データ詳細表示・編集画面
 @app.route('/data/<filename>', methods=['GET', 'POST'])
@@ -855,8 +890,11 @@ def settings():
 
 # 対話型インターフェース画面
 @app.route('/chat')
+@login_required
 def chat():
-    return render_template('chat.html')
+    # 現在時刻をテンプレートに渡す
+    now = datetime.now()
+    return render_template('chat.html', now=now)
 
 # 対話型インターフェースAPI
 @app.route('/api/chat', methods=['POST'])

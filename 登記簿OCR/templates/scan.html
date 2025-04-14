@@ -253,44 +253,78 @@
 
                 <!-- OCR設定 -->
                 <div class="card mb-4">
-                    <div class="card-header settings-toggle" data-bs-toggle="collapse" data-bs-target="#ocrSettings" aria-expanded="false">
-                        <i class="bi bi-gear me-2"></i> OCR設定 <i class="bi bi-chevron-down float-end"></i>
+                    <div class="card-header settings-toggle" data-bs-toggle="collapse" data-bs-target="#ocrSettings" aria-expanded="false" aria-controls="ocrSettings">
+                        <i class="bi bi-gear-fill me-2"></i> OCR設定
+                        <i class="bi bi-chevron-down float-end"></i>
                     </div>
                     <div class="collapse" id="ocrSettings">
                         <div class="card-body">
-                            <div class="row">
+                            <div class="row mb-3">
                                 <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="dpi" class="form-label">解像度 (DPI)</label>
-                                        <select class="form-select" id="dpi" name="dpi">
-                                            <option value="150" {% if ocr_settings.dpi == 150 %}selected{% endif %}>150 DPI (低)</option>
-                                            <option value="300" {% if ocr_settings.dpi == 300 %}selected{% endif %}>300 DPI (標準)</option>
-                                            <option value="600" {% if ocr_settings.dpi == 600 %}selected{% endif %}>600 DPI (高)</option>
-                                        </select>
-                                        <div class="form-text">高いDPIほど精度が上がりますが、処理時間が長くなります。</div>
-                                    </div>
+                                    <label for="dpi" class="form-label">DPI設定</label>
+                                    <select class="form-select" id="dpi" name="dpi">
+                                        <option value="200" {% if ocr_settings.dpi == 200 %}selected{% endif %}>200 DPI (低品質)</option>
+                                        <option value="300" {% if ocr_settings.dpi == 300 %}selected{% endif %}>300 DPI (標準)</option>
+                                        <option value="400" {% if ocr_settings.dpi == 400 %}selected{% endif %}>400 DPI (高品質)</option>
+                                        <option value="600" {% if ocr_settings.dpi == 600 %}selected{% endif %}>600 DPI (最高品質)</option>
+                                    </select>
+                                    <div class="form-text">高いDPI値はより詳細な画像処理を可能にしますが、処理時間が長くなります。</div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="psm" class="form-label">ページセグメンテーションモード (PSM)</label>
-                                        <select class="form-select" id="psm" name="psm">
-                                            {% for key, value in psm_options.items() %}
-                                                <option value="{{ key }}" {% if ocr_settings.psm == key %}selected{% endif %}>{{ key }} - {{ value }}</option>
-                                            {% endfor %}
-                                        </select>
-                                        <div class="form-text">登記簿は PSM 6（単一の均一なブロック）が一般的に有効です。</div>
-                                    </div>
+                                    <label for="psm" class="form-label">ページセグメンテーションモード</label>
+                                    <select class="form-select" id="psm" name="psm">
+                                        <option value="3" {% if ocr_settings.psm == 3 %}selected{% endif %}>自動ページセグメンテーション</option>
+                                        <option value="4" {% if ocr_settings.psm == 4 %}selected{% endif %}>縦書きテキスト</option>
+                                        <option value="6" {% if ocr_settings.psm == 6 %}selected{% endif %}>単一テキストブロック</option>
+                                        <option value="11" {% if ocr_settings.psm == 11 %}selected{% endif %}>分割なし（登記簿全体）</option>
+                                        <option value="12" {% if ocr_settings.psm == 12 %}selected{% endif %}>スパース（表形式）</option>
+                                    </select>
+                                    <div class="form-text">ページセグメンテーションモードはOCRがどのようにページを分割するかを決定します。</div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="oem" class="form-label">OCRエンジンモード (OEM)</label>
-                                        <select class="form-select" id="oem" name="oem">
-                                            {% for key, value in oem_options.items() %}
-                                                <option value="{{ key }}" {% if ocr_settings.oem == key %}selected{% endif %}>{{ key }} - {{ value }}</option>
-                                            {% endfor %}
-                                        </select>
-                                        <div class="form-text">LSTMエンジンは日本語認識に優れています。</div>
+                                    <label for="oem" class="form-label">OCRエンジンモード</label>
+                                    <select class="form-select" id="oem" name="oem">
+                                        <option value="0" {% if ocr_settings.oem == 0 %}selected{% endif %}>レガシーエンジン</option>
+                                        <option value="1" {% if ocr_settings.oem == 1 %}selected{% endif %}>ニューラルネットのみ</option>
+                                        <option value="2" {% if ocr_settings.oem == 2 %}selected{% endif %}>レガシー+ニューラルネット</option>
+                                        <option value="3" {% if ocr_settings.oem == 3 %}selected{% endif %}>デフォルト</option>
+                                    </select>
+                                    <div class="form-text">OCRエンジンモードは使用するOCRアルゴリズムを選択します。</div>
+                                </div>
+                            </div>
+                            
+                            <!-- 精度向上オプション - 新しく追加 -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <h5>精度向上オプション</h5>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="enhance_preprocessing" name="enhance_preprocessing" {% if ocr_settings.enhance_preprocessing %}checked{% endif %}>
+                                        <label class="form-check-label" for="enhance_preprocessing">前処理強化</label>
                                     </div>
+                                    <div class="form-text">画像のコントラスト・明るさの自動調整</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="detect_orientation" name="detect_orientation" {% if ocr_settings.detect_orientation %}checked{% endif %}>
+                                        <label class="form-check-label" for="detect_orientation">自動方向検出</label>
+                                    </div>
+                                    <div class="form-text">横書き・縦書きを自動検出</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="optimize_japanese" name="optimize_japanese" {% if ocr_settings.optimize_japanese %}checked{% endif %}>
+                                        <label class="form-check-label" for="optimize_japanese">日本語最適化</label>
+                                    </div>
+                                    <div class="form-text">日本語特有の文字認識精度向上</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="remove_lines" name="remove_lines" {% if ocr_settings.remove_lines %}checked{% endif %}>
+                                        <label class="form-check-label" for="remove_lines">線の除去</label>
+                                    </div>
+                                    <div class="form-text">表の枠線などを除去して文字認識を改善</div>
                                 </div>
                             </div>
                         </div>
