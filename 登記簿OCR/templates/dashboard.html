@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登記簿OCR - ダッシュボード</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: 'Meiryo', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 250px;
+            z-index: 1;
+            padding-top: 20px;
+            background-color: #343a40;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 10px;
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+        }
+        .sidebar .nav-link.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar .sidebar-heading {
+            padding: 0.875rem 1.25rem;
+            font-size: 1.2rem;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+        }
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .stat-card .label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .recent-file-card {
+            border-left: 4px solid;
+        }
+        .recent-file-card.high {
+            border-left-color: #28a745;
+        }
+        .recent-file-card.medium {
+            border-left-color: #ffc107;
+        }
+        .recent-file-card.low {
+            border-left-color: #dc3545;
+        }
+        .alert-flash {
+            animation: fadeOut 5s forwards;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+    </style>
+</head>
+<body>
+    <!-- サイドバー -->
+    <div class="sidebar">
+        <div class="text-center">
+            <h3 class="sidebar-heading">登記簿OCR</h3>
+            <hr class="my-2" style="background-color: rgba(255, 255, 255, 0.3);">
+        </div>
+        <ul class="nav flex-column px-3">
+            <li class="nav-item">
+                <a class="nav-link active" href="/">
+                    <i class="bi bi-speedometer2 me-2"></i> ダッシュボード
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/scan">
+                    <i class="bi bi-camera me-2"></i> スキャン・OCR
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/data">
+                    <i class="bi bi-database me-2"></i> データ管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/reports">
+                    <i class="bi bi-file-earmark-text me-2"></i> レポート
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/chat">
+                    <i class="bi bi-chat-dots me-2"></i> チャット
+                </a>
+            </li>
+            <li class="nav-item mt-3">
+                <a class="nav-link" href="/settings">
+                    <i class="bi bi-gear me-2"></i> 設定
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <div class="main-content">
+        <div class="container-fluid">
+            <h1 class="mb-4">ダッシュボード</h1>
+            
+            <!-- アラートメッセージ -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show alert-flash" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- 統計カード -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card stat-card">
+                        <div class="card-body">
+                            <div class="number text-primary">{{ stats.total_files }}</div>
+                            <div class="label">処理済みファイル</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stat-card">
+                        <div class="card-body">
+                            <div class="number text-success">{{ stats.avg_confidence }}%</div>
+                            <div class="label">平均認識精度</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stat-card">
+                        <div class="card-body">
+                            <div class="number text-info">{{ stats.pending_files }}</div>
+                            <div class="label">保留中ファイル</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- アクションボタン -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body d-flex justify-content-around">
+                            <a href="/scan" class="btn btn-primary"><i class="bi bi-camera me-2"></i>新規スキャン</a>
+                            <a href="/data" class="btn btn-secondary"><i class="bi bi-search me-2"></i>データ検索</a>
+                            <a href="/reports" class="btn btn-success"><i class="bi bi-file-earmark-text me-2"></i>レポート作成</a>
+                            <a href="/chat" class="btn btn-info text-white"><i class="bi bi-chat-dots me-2"></i>質問する</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 最近処理されたファイル -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-white">
+                            <h4>最近処理されたファイル</h4>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_files %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>ファイル名</th>
+                                                <th>処理日時</th>
+                                                <th>認識精度</th>
+                                                <th>アクション</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for file in recent_files %}
+                                                <tr>
+                                                    <td>{{ file.filename }}</td>
+                                                    <td>{{ file.processed_at }}</td>
+                                                    <td>
+                                                        {% if file.confidence >= 90 %}
+                                                            <span class="badge bg-success">{{ file.confidence }}%</span>
+                                                        {% elif file.confidence >= 70 %}
+                                                            <span class="badge bg-warning text-dark">{{ file.confidence }}%</span>
+                                                        {% else %}
+                                                            <span class="badge bg-danger">{{ file.confidence }}%</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <a href="{{ url_for('result', filename=file.result_file) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-eye"></i> 表示
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="bi bi-file-earmark-x" style="font-size: 3rem;"></i>
+                                    <p class="mt-3">処理済みのファイルがありません</p>
+                                    <a href="/scan" class="btn btn-primary">スキャンを開始する</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // アラートの自動非表示
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                var alerts = document.querySelectorAll('.alert-flash');
+                alerts.forEach(function(alert) {
+                    var bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
+    </script>
+</body>
+</html> 

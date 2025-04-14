@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登記簿OCRアプリ - ダッシュボード</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            background-color: #2C3E50;
+        }
+        
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 48px);
+            padding-top: .5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #f8f9fa;
+            padding: 0.5rem 1rem;
+            margin: 0.2rem 0;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: #3498DB;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+        }
+        
+        main {
+            padding-top: 30px;
+        }
+        
+        .card {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+            font-weight: bold;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .stat-card .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #3498DB;
+        }
+        
+        .stat-card .stat-label {
+            font-size: 1rem;
+            color: #6c757d;
+        }
+        
+        .quick-actions .btn {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- サイドバー -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <div class="text-center mb-4">
+                        <h4 class="text-white">登記簿OCRアプリ</h4>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/">
+                                <i class="bi bi-speedometer2"></i>
+                                ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/scan">
+                                <i class="bi bi-camera"></i>
+                                スキャン・OCR
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/data">
+                                <i class="bi bi-database"></i>
+                                データ管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/reports">
+                                <i class="bi bi-file-earmark-text"></i>
+                                レポート
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/chat">
+                                <i class="bi bi-chat-dots"></i>
+                                対話型検索
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/settings">
+                                <i class="bi bi-gear"></i>
+                                設定
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- メインコンテンツ -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">ダッシュボード</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-calendar3"></i> 今日
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-calendar3"></i> 今週
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-calendar3"></i> 今月
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- フラッシュメッセージ -->
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- 統計情報 -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card stat-card">
+                            <div class="stat-value">{{ stats.total_files }}</div>
+                            <div class="stat-label">処理済みファイル</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card stat-card">
+                            <div class="stat-value">{{ stats.pending_files }}</div>
+                            <div class="stat-label">処理待ちファイル</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card stat-card">
+                            <div class="stat-value">{{ recent_files|length }}</div>
+                            <div class="stat-label">最近の処理</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- クイックアクション -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        クイックアクション
+                    </div>
+                    <div class="card-body quick-actions">
+                        <a href="/scan" class="btn btn-primary">
+                            <i class="bi bi-camera"></i> 新規スキャン
+                        </a>
+                        <a href="/data" class="btn btn-secondary">
+                            <i class="bi bi-search"></i> データ検索
+                        </a>
+                        <a href="/reports" class="btn btn-success">
+                            <i class="bi bi-file-earmark-text"></i> レポート作成
+                        </a>
+                        <a href="/chat" class="btn btn-info text-white">
+                            <i class="bi bi-chat-dots"></i> 対話型検索
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 最近の処理 -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        最近の処理
+                    </div>
+                    <div class="card-body">
+                        {% if recent_files %}
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ファイル名</th>
+                                            <th>処理日時</th>
+                                            <th>信頼度</th>
+                                            <th>アクション</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for file in recent_files %}
+                                            <tr>
+                                                <td>{{ file.filename }}</td>
+                                                <td>{{ file.processed_at }}</td>
+                                                <td>
+                                                    <div class="progress">
+                                                        <div class="progress-bar {% if file.confidence < 50 %}bg-danger{% elif file.confidence < 80 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                             role="progressbar" 
+                                                             style="width: {{ file.confidence }}%;" 
+                                                             aria-valuenow="{{ file.confidence }}" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="100">
+                                                            {{ file.confidence }}%
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <a href="/result/{{ file.result_file }}" class="btn btn-sm btn-primary">
+                                                        <i class="bi bi-eye"></i> 表示
+                                                    </a>
+                                                    <a href="/download/{{ file.result_file }}" class="btn btn-sm btn-secondary">
+                                                        <i class="bi bi-download"></i> ダウンロード
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-center">最近処理されたファイルはありません。</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登記簿OCRアプリ - 処理結果</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            background-color: #2C3E50;
+        }
+        
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 48px);
+            padding-top: .5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #f8f9fa;
+            padding: 0.5rem 1rem;
+            margin: 0.2rem 0;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: #3498DB;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+        }
+        
+        main {
+            padding-top: 30px;
+        }
+        
+        .card {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+            font-weight: bold;
+        }
+        
+        .result-header {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .result-header h2 {
+            margin-bottom: 0;
+        }
+        
+        .confidence-badge {
+            font-size: 1rem;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        
+        .field-label {
+            font-weight: bold;
+            color: #6c757d;
+        }
+        
+        .field-value {
+            font-size: 1.1rem;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 10px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-tabs .nav-link {
+            color: #495057;
+        }
+        
+        .nav-tabs .nav-link.active {
+            font-weight: bold;
+            color: #3498DB;
+            border-bottom: 2px solid #3498DB;
+        }
+        
+        .step-indicator {
+            display: flex;
+            margin-bottom: 30px;
+        }
+        
+        .step {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            position: relative;
+        }
+        
+        .step::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            width: 100%;
+            height: 2px;
+            background-color: #ccc;
+            transform: translateY(-50%);
+        }
+        
+        .step:last-child::after {
+            display: none;
+        }
+        
+        .step.active {
+            color: #3498DB;
+            font-weight: bold;
+        }
+        
+        .step.completed {
+            color: #2ecc71;
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            border-radius: 50%;
+            background-color: #ccc;
+            color: white;
+            margin-bottom: 5px;
+        }
+        
+        .step.active .step-number {
+            background-color: #3498DB;
+        }
+        
+        .step.completed .step-number {
+            background-color: #2ecc71;
+        }
+        
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- サイドバー -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <div class="text-center mb-4">
+                        <h4 class="text-white">登記簿OCRアプリ</h4>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/">
+                                <i class="bi bi-speedometer2"></i>
+                                ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/scan">
+                                <i class="bi bi-camera"></i>
+                                スキャン・OCR
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/data">
+                                <i class="bi bi-database"></i>
+                                データ管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/reports">
+                                <i class="bi bi-file-earmark-text"></i>
+                                レポート
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/chat">
+                                <i class="bi bi-chat-dots"></i>
+                                対話型検索
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/settings">
+                                <i class="bi bi-gear"></i>
+                                設定
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- メインコンテンツ -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">OCR処理結果</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a href="/scan" class="btn btn-outline-secondary me-2">
+                            <i class="bi bi-plus-circle"></i> 新規スキャン
+                        </a>
+                        <a href="/data" class="btn btn-outline-primary">
+                            <i class="bi bi-database"></i> データ一覧
+                        </a>
+                    </div>
+                </div>
+
+                <!-- フラッシュメッセージ -->
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- ステップインジケーター -->
+                <div class="step-indicator">
+                    <div class="step completed">
+                        <div class="step-number">1</div>
+                        <div class="step-label">ファイル選択</div>
+                    </div>
+                    <div class="step completed">
+                        <div class="step-number">2</div>
+                        <div class="step-label">OCR処理</div>
+                    </div>
+                    <div class="step active">
+                        <div class="step-number">3</div>
+                        <div class="step-label">結果確認</div>
+                    </div>
+                </div>
+
+                <!-- 結果ヘッダー -->
+                <div class="result-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h2>{{ original_filename }}</h2>
+                            <p class="mb-0">処理日時: {{ formatted_date }}</p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <span class="badge rounded-pill {% if confidence < 50 %}bg-danger{% elif confidence < 80 %}bg-warning{% else %}bg-success{% endif %} confidence-badge">
+                                信頼度: {{ confidence }}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- タブナビゲーション -->
+                <ul class="nav nav-tabs mb-4" id="resultTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="structured-tab" data-bs-toggle="tab" data-bs-target="#structured" type="button" role="tab" aria-controls="structured" aria-selected="true">
+                            <i class="bi bi-card-checklist me-1"></i> 構造化データ
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="raw-tab" data-bs-toggle="tab" data-bs-target="#raw" type="button" role="tab" aria-controls="raw" aria-selected="false">
+                            <i class="bi bi-file-text me-1"></i> 生テキスト
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="images-tab" data-bs-toggle="tab" data-bs-target="#images" type="button" role="tab" aria-controls="images" aria-selected="false">
+                            <i class="bi bi-image me-1"></i> 画像
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="debug-tab" data-bs-toggle="tab" data-bs-target="#debug" type="button" role="tab" aria-controls="debug" aria-selected="false">
+                            <i class="bi bi-bug me-1"></i> デバッグ情報
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- タブコンテンツ -->
+                <div class="tab-content" id="resultTabsContent">
+                    <!-- 構造化データタブ -->
+                    <div class="tab-pane fade show active" id="structured" role="tabpanel" aria-labelledby="structured-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-card-checklist me-2"></i> 抽出された構造化データ
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <div class="field-label">不動産番号</div>
+                                            <div class="field-value">{{ structured_data.property_number or 'N/A' }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <div class="field-label">所在</div>
+                                            <div class="field-value">{{ structured_data.address or 'N/A' }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <div class="field-label">地番</div>
+                                            <div class="field-value">{{ structured_data.lot_number or 'N/A' }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <div class="field-label">地積</div>
+                                            <div class="field-value">{{ structured_data.area or 'N/A' }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <div class="field-label">所有者名</div>
+                                            <div class="field-value">{{ structured_data.owner_name or 'N/A' }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <div class="field-label">所有者住所</div>
+                                            <div class="field-value">{{ structured_data.owner_address or 'N/A' }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="mb-3">
+                                            <div class="field-label">権利情報</div>
+                                            {% if structured_data.rights %}
+                                                <ul class="field-value">
+                                                    {% for right in structured_data.rights %}
+                                                        <li>{{ right }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            {% else %}
+                                                <div class="field-value">N/A</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-center mt-4">
+                                    <a href="/data/{{ filename }}" class="btn btn-primary">
+                                        <i class="bi bi-pencil"></i> データを編集
+                                    </a>
+                                    <a href="/data/export/{{ filename }}/csv" class="btn btn-outline-secondary ms-2">
+                                        <i class="bi bi-download"></i> CSVエクスポート
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 生テキストタブ -->
+                    <div class="tab-pane fade" id="raw" role="tabpanel" aria-labelledby="raw-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-file-text me-2"></i> 抽出された生テキスト
+                            </div>
+                            <div class="card-body">
+                                <pre>{{ structured_data.raw_text }}</pre>
+                                
+                                <div class="text-center mt-4">
+                                    <button class="btn btn-outline-secondary" onclick="copyText()">
+                                        <i class="bi bi-clipboard"></i> テキストをコピー
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 画像タブ -->
+                    <div class="tab-pane fade" id="images" role="tabpanel" aria-labelledby="images-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-image me-2"></i> 処理画像
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    {% if has_original_image %}
+                                    <div class="col-md-6 text-center mb-4">
+                                        <h5>元の画像</h5>
+                                        <img src="/original_image/{{ original_filename }}" alt="元の画像" class="image-preview">
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if has_debug_image %}
+                                    <div class="col-md-6 text-center mb-4">
+                                        <h5>前処理された画像</h5>
+                                        <img src="/debug_image/preprocessed" alt="前処理画像" class="image-preview">
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if table_cells %}
+                                <h5 class="mt-4">検出されたテーブルセル</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>位置 (x, y, w, h)</th>
+                                                <th>抽出テキスト</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for cell in table_cells %}
+                                            <tr>
+                                                <td>{{ cell.position }}</td>
+                                                <td>{{ cell.text }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- デバッグ情報タブ -->
+                    <div class="tab-pane fade" id="debug" role="tabpanel" aria-labelledby="debug-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-bug me-2"></i> デバッグ情報
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-4">
+                                    <h5>OCR設定</h5>
+                                    <ul>
+                                        <li><strong>信頼度:</strong> {{ confidence }}%</li>
+                                        <li><strong>言語:</strong> {{ result.lang|default('jpn') }}</li>
+                                        <li><strong>PSM:</strong> {{ result.psm|default('6') }}</li>
+                                        <li><strong>OEM:</strong> {{ result.oem|default('3') }}</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <h5>処理時間</h5>
+                                    <p>{{ result.processing_time|default('N/A') }}</p>
+                                </div>
+                                
+                                <div>
+                                    <h5>JSON出力</h5>
+                                    <pre style="max-height: 300px; overflow-y: auto;">{{ result|tojson(indent=2) }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyText() {
+            const text = document.querySelector('#raw pre').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('テキストをクリップボードにコピーしました');
+            }).catch(err => {
+                console.error('テキストのコピーに失敗しました', err);
+                alert('テキストのコピーに失敗しました');
+            });
+        }
+    </script>
+</body>
+</html> 

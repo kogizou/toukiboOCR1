@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登記簿OCRアプリ - レポート</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            background-color: #2C3E50;
+        }
+        
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 48px);
+            padding-top: .5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #f8f9fa;
+            padding: 0.5rem 1rem;
+            margin: 0.2rem 0;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: #3498DB;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+        }
+        
+        main {
+            padding-top: 30px;
+        }
+        
+        .card {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+            font-weight: bold;
+        }
+        
+        .report-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        
+        .report-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .report-card.selected {
+            border-color: #3498DB;
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+        
+        .report-icon {
+            font-size: 2.5rem;
+            color: #3498DB;
+            margin-bottom: 15px;
+        }
+        
+        .format-option {
+            display: inline-block;
+            margin-right: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+        
+        .format-option input[type="radio"] {
+            display: none;
+        }
+        
+        .format-option label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .format-option input[type="radio"]:checked + label {
+            border-color: #3498DB;
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+        
+        .format-icon {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+        
+        .format-csv .format-icon {
+            color: #28a745;
+        }
+        
+        .format-excel .format-icon {
+            color: #217346;
+        }
+        
+        .format-pdf .format-icon {
+            color: #dc3545;
+        }
+        
+        .preview-container {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            height: 300px;
+            overflow: auto;
+        }
+        
+        .step-progress {
+            display: flex;
+            margin-bottom: 30px;
+        }
+        
+        .step {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            position: relative;
+        }
+        
+        .step::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            width: 100%;
+            height: 2px;
+            background-color: #ccc;
+            transform: translateY(-50%);
+        }
+        
+        .step:last-child::after {
+            display: none;
+        }
+        
+        .step .step-circle {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            border-radius: 50%;
+            background-color: #ccc;
+            color: white;
+            margin-bottom: 5px;
+        }
+        
+        .step.active .step-circle {
+            background-color: #3498DB;
+        }
+        
+        .step.completed .step-circle {
+            background-color: #2ecc71;
+        }
+        
+        .step.active {
+            font-weight: bold;
+            color: #3498DB;
+        }
+        
+        .step.completed {
+            color: #2ecc71;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- サイドバー -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <div class="text-center mb-4">
+                        <h4 class="text-white">登記簿OCRアプリ</h4>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/">
+                                <i class="bi bi-speedometer2"></i>
+                                ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/scan">
+                                <i class="bi bi-camera"></i>
+                                スキャン・OCR
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/data">
+                                <i class="bi bi-database"></i>
+                                データ管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/reports">
+                                <i class="bi bi-file-earmark-text"></i>
+                                レポート
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/chat">
+                                <i class="bi bi-chat-dots"></i>
+                                対話型検索
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/settings">
+                                <i class="bi bi-gear"></i>
+                                設定
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- メインコンテンツ -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">レポート生成</h1>
+                </div>
+
+                <!-- フラッシュメッセージ -->
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- 進捗表示 -->
+                <div class="step-progress">
+                    <div class="step active" id="step1">
+                        <div class="step-circle">1</div>
+                        <div class="step-label">レポートタイプ選択</div>
+                    </div>
+                    <div class="step" id="step2">
+                        <div class="step-circle">2</div>
+                        <div class="step-label">フォーマット選択</div>
+                    </div>
+                    <div class="step" id="step3">
+                        <div class="step-circle">3</div>
+                        <div class="step-label">プレビュー</div>
+                    </div>
+                </div>
+
+                <!-- レポート生成フォーム -->
+                <form id="reportForm">
+                    <!-- ステップ1: レポートタイプ選択 -->
+                    <div class="card mb-4" id="reportTypeSection">
+                        <div class="card-header">
+                            <i class="bi bi-file-earmark-text me-2"></i> レポートタイプの選択
+                        </div>
+                        <div class="card-body">
+                            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+                                {% for template in report_templates %}
+                                <div class="col">
+                                    <div class="card report-card" onclick="selectReportType('{{ template.id }}')">
+                                        <div class="card-body text-center" id="report-{{ template.id }}">
+                                            <i class="bi bi-file-earmark-text report-icon"></i>
+                                            <h5 class="card-title">{{ template.name }}</h5>
+                                            <p class="card-text text-muted">{{ template.description }}</p>
+                                            <input type="radio" name="report_type" value="{{ template.id }}" class="d-none" id="radio-{{ template.id }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ステップ2: フォーマット選択 -->
+                    <div class="card mb-4 d-none" id="formatSection">
+                        <div class="card-header">
+                            <i class="bi bi-file-earmark me-2"></i> 出力フォーマットの選択
+                        </div>
+                        <div class="card-body">
+                            <div class="format-options text-center">
+                                {% for format in output_formats %}
+                                <div class="format-option format-{{ format.id }}">
+                                    <input type="radio" name="format" value="{{ format.id }}" id="format-{{ format.id }}">
+                                    <label for="format-{{ format.id }}">
+                                        <i class="bi {% if format.id == 'csv' %}bi-filetype-csv{% elif format.id == 'excel' %}bi-file-excel{% elif format.id == 'pdf' %}bi-file-pdf{% endif %} format-icon"></i>
+                                        <span>{{ format.name }}</span>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ステップ3: プレビュー -->
+                    <div class="card mb-4 d-none" id="previewSection">
+                        <div class="card-header">
+                            <i class="bi bi-eye me-2"></i> レポートプレビュー
+                        </div>
+                        <div class="card-body">
+                            <div class="preview-container" id="previewContainer">
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary mb-3" role="status">
+                                        <span class="visually-hidden">プレビュー生成中...</span>
+                                    </div>
+                                    <h5>プレビューを生成中...</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- アクションボタン -->
+                    <div class="d-flex justify-content-between mb-4">
+                        <button type="button" class="btn btn-outline-secondary d-none" id="backButton">
+                            <i class="bi bi-arrow-left"></i> 戻る
+                        </button>
+                        <div>
+                            <button type="button" class="btn btn-primary" id="nextButton">
+                                次へ <i class="bi bi-arrow-right"></i>
+                            </button>
+                            <button type="button" class="btn btn-success d-none" id="generateButton">
+                                <i class="bi bi-file-earmark-arrow-down"></i> レポート生成
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- 結果表示エリア -->
+                <div class="alert alert-success d-none" id="resultAlert">
+                    <h4 class="alert-heading">レポートが生成されました！</h4>
+                    <p id="resultMessage">レポートの生成が完了しました。ダウンロードボタンをクリックしてファイルを取得してください。</p>
+                    <hr>
+                    <p class="mb-0">
+                        <a href="#" class="btn btn-success" id="downloadLink">
+                            <i class="bi bi-download"></i> ダウンロード
+                        </a>
+                    </p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentStep = 1;
+        let selectedReportType = null;
+        let selectedFormat = null;
+        
+        // レポートタイプの選択
+        function selectReportType(reportId) {
+            // すべてのカードの選択状態をリセット
+            document.querySelectorAll('.report-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // 選択したカードをハイライト
+            const card = document.getElementById('report-' + reportId);
+            card.classList.add('selected');
+            
+            // ラジオボタンを選択
+            const radio = document.getElementById('radio-' + reportId);
+            radio.checked = true;
+            
+            selectedReportType = reportId;
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const nextButton = document.getElementById('nextButton');
+            const backButton = document.getElementById('backButton');
+            const generateButton = document.getElementById('generateButton');
+            const reportTypeSection = document.getElementById('reportTypeSection');
+            const formatSection = document.getElementById('formatSection');
+            const previewSection = document.getElementById('previewSection');
+            const previewContainer = document.getElementById('previewContainer');
+            const resultAlert = document.getElementById('resultAlert');
+            const downloadLink = document.getElementById('downloadLink');
+            
+            // 次へボタンのクリックイベント
+            nextButton.addEventListener('click', function() {
+                if (currentStep === 1) {
+                    // レポートタイプが選択されているか確認
+                    if (!selectedReportType) {
+                        alert('レポートタイプを選択してください');
+                        return;
+                    }
+                    
+                    // ステップ2に進む
+                    reportTypeSection.classList.add('d-none');
+                    formatSection.classList.remove('d-none');
+                    backButton.classList.remove('d-none');
+                    
+                    // 進捗表示の更新
+                    document.getElementById('step1').classList.remove('active');
+                    document.getElementById('step1').classList.add('completed');
+                    document.getElementById('step2').classList.add('active');
+                    
+                    currentStep = 2;
+                } else if (currentStep === 2) {
+                    // フォーマットが選択されているか確認
+                    selectedFormat = document.querySelector('input[name="format"]:checked');
+                    if (!selectedFormat) {
+                        alert('出力フォーマットを選択してください');
+                        return;
+                    }
+                    
+                    // ステップ3に進む
+                    formatSection.classList.add('d-none');
+                    previewSection.classList.remove('d-none');
+                    nextButton.classList.add('d-none');
+                    generateButton.classList.remove('d-none');
+                    
+                    // 進捗表示の更新
+                    document.getElementById('step2').classList.remove('active');
+                    document.getElementById('step2').classList.add('completed');
+                    document.getElementById('step3').classList.add('active');
+                    
+                    // プレビューの生成
+                    generatePreview();
+                    
+                    currentStep = 3;
+                }
+            });
+            
+            // 戻るボタンのクリックイベント
+            backButton.addEventListener('click', function() {
+                if (currentStep === 2) {
+                    // ステップ1に戻る
+                    formatSection.classList.add('d-none');
+                    reportTypeSection.classList.remove('d-none');
+                    backButton.classList.add('d-none');
+                    
+                    // 進捗表示の更新
+                    document.getElementById('step2').classList.remove('active');
+                    document.getElementById('step1').classList.remove('completed');
+                    document.getElementById('step1').classList.add('active');
+                    
+                    currentStep = 1;
+                } else if (currentStep === 3) {
+                    // ステップ2に戻る
+                    previewSection.classList.add('d-none');
+                    formatSection.classList.remove('d-none');
+                    nextButton.classList.remove('d-none');
+                    generateButton.classList.add('d-none');
+                    
+                    // 進捗表示の更新
+                    document.getElementById('step3').classList.remove('active');
+                    document.getElementById('step2').classList.remove('completed');
+                    document.getElementById('step2').classList.add('active');
+                    
+                    currentStep = 2;
+                }
+            });
+            
+            // レポート生成ボタンのクリックイベント
+            generateButton.addEventListener('click', function() {
+                // レポート生成APIの呼び出し
+                const formData = new FormData();
+                formData.append('report_type', selectedReportType);
+                formData.append('format', selectedFormat.value);
+                
+                // ボタンを無効化
+                generateButton.disabled = true;
+                generateButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 生成中...';
+                
+                fetch('/api/generate_report', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        generateButton.disabled = false;
+                        generateButton.innerHTML = '<i class="bi bi-file-earmark-arrow-down"></i> レポート生成';
+                    } else {
+                        // 成功メッセージと結果の表示
+                        resultAlert.classList.remove('d-none');
+                        downloadLink.href = data.download_url;
+                        
+                        // ボタンを元に戻す
+                        generateButton.disabled = false;
+                        generateButton.innerHTML = '<i class="bi bi-file-earmark-arrow-down"></i> レポート生成';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('レポート生成中にエラーが発生しました');
+                    generateButton.disabled = false;
+                    generateButton.innerHTML = '<i class="bi bi-file-earmark-arrow-down"></i> レポート生成';
+                });
+            });
+            
+            // プレビュー生成関数
+            function generatePreview() {
+                // 実際のプレビュー生成ロジックはサーバーサイドで実装する必要がある
+                // ここではダミーデータを表示
+                setTimeout(() => {
+                    let previewHTML = '<table class="table table-striped table-bordered">';
+                    
+                    if (selectedReportType === 'property_list') {
+                        previewHTML += `
+                            <thead>
+                                <tr>
+                                    <th>不動産番号</th>
+                                    <th>所在</th>
+                                    <th>地番</th>
+                                    <th>地積</th>
+                                    <th>所有者名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1234-5678-9012</td>
+                                    <td>東京都千代田区丸の内</td>
+                                    <td>1番1</td>
+                                    <td>100.00平方メートル</td>
+                                    <td>山田太郎</td>
+                                </tr>
+                                <tr>
+                                    <td>2345-6789-0123</td>
+                                    <td>東京都中央区銀座</td>
+                                    <td>2番2</td>
+                                    <td>150.50平方メートル</td>
+                                    <td>鈴木一郎</td>
+                                </tr>
+                            </tbody>
+                        `;
+                    } else if (selectedReportType === 'owner_list') {
+                        previewHTML += `
+                            <thead>
+                                <tr>
+                                    <th>所有者名</th>
+                                    <th>所有不動産数</th>
+                                    <th>不動産番号</th>
+                                    <th>所在</th>
+                                    <th>地番</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td rowspan="2">山田太郎</td>
+                                    <td rowspan="2">2</td>
+                                    <td>1234-5678-9012</td>
+                                    <td>東京都千代田区丸の内</td>
+                                    <td>1番1</td>
+                                </tr>
+                                <tr>
+                                    <td>3456-7890-1234</td>
+                                    <td>神奈川県横浜市西区</td>
+                                    <td>3番3</td>
+                                </tr>
+                            </tbody>
+                        `;
+                    } else if (selectedReportType === 'survey_sheet') {
+                        previewHTML += `
+                            <thead>
+                                <tr>
+                                    <th>調査日</th>
+                                    <th>不動産番号</th>
+                                    <th>所在</th>
+                                    <th>地番</th>
+                                    <th>地目</th>
+                                    <th>地積(㎡)</th>
+                                    <th>所有者名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>2023/05/15</td>
+                                    <td>1234-5678-9012</td>
+                                    <td>東京都千代田区丸の内</td>
+                                    <td>1番1</td>
+                                    <td>宅地</td>
+                                    <td>100.00</td>
+                                    <td>山田太郎</td>
+                                </tr>
+                            </tbody>
+                        `;
+                    } else if (selectedReportType === 'rights_report') {
+                        previewHTML += `
+                            <thead>
+                                <tr>
+                                    <th>不動産番号</th>
+                                    <th>所在</th>
+                                    <th>地番</th>
+                                    <th>権利情報</th>
+                                    <th>所有者名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1234-5678-9012</td>
+                                    <td>東京都千代田区丸の内</td>
+                                    <td>1番1</td>
+                                    <td>所有権</td>
+                                    <td>山田太郎</td>
+                                </tr>
+                                <tr>
+                                    <td>2345-6789-0123</td>
+                                    <td>東京都中央区銀座</td>
+                                    <td>2番2</td>
+                                    <td>地上権</td>
+                                    <td>鈴木一郎</td>
+                                </tr>
+                            </tbody>
+                        `;
+                    }
+                    
+                    previewHTML += '</table>';
+                    previewContainer.innerHTML = previewHTML;
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登記簿OCRアプリ - 所有者変更タイムライン</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            background-color: #2C3E50;
+        }
+        
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 48px);
+            padding-top: .5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #f8f9fa;
+            padding: 0.5rem 1rem;
+            margin: 0.2rem 0;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: #3498DB;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+        }
+        
+        main {
+            padding-top: 30px;
+        }
+        
+        .card {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+            font-weight: bold;
+        }
+        
+        .property-info {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+            list-style: none;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .timeline:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #3498DB;
+            left: 50%;
+            margin-left: -2px;
+        }
+        
+        .timeline-item {
+            padding-left: 0;
+            padding-right: 0;
+            position: relative;
+            margin-bottom: 50px;
+        }
+        
+        .timeline-item::after {
+            content: '';
+            display: table;
+            clear: both;
+        }
+        
+        .timeline-item .timeline-badge {
+            width: 40px;
+            height: 40px;
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            margin-left: -20px;
+            border-radius: 50%;
+            text-align: center;
+            background: #3498DB;
+            color: white;
+            line-height: 40px;
+            font-size: 18px;
+            z-index: 10;
+        }
+        
+        .timeline-item .timeline-panel {
+            position: relative;
+            width: 46%;
+            float: left;
+            border: 1px solid #d4d4d4;
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+            margin-right: 30px;
+        }
+        
+        .timeline-item:nth-child(even) .timeline-panel {
+            float: right;
+            margin-right: 0;
+            margin-left: 30px;
+        }
+        
+        .timeline-item .timeline-panel:before {
+            position: absolute;
+            top: 26px;
+            right: -15px;
+            display: inline-block;
+            border-top: 15px solid transparent;
+            border-left: 15px solid #d4d4d4;
+            border-right: 0 solid #d4d4d4;
+            border-bottom: 15px solid transparent;
+            content: " ";
+        }
+        
+        .timeline-item:nth-child(even) .timeline-panel:before {
+            border-left-width: 0;
+            border-right-width: 15px;
+            left: -15px;
+            right: auto;
+            border-right-color: #d4d4d4;
+        }
+        
+        .timeline-item .timeline-panel:after {
+            position: absolute;
+            top: 27px;
+            right: -14px;
+            display: inline-block;
+            border-top: 14px solid transparent;
+            border-left: 14px solid #ffffff;
+            border-right: 0 solid #ffffff;
+            border-bottom: 14px solid transparent;
+            content: " ";
+        }
+        
+        .timeline-item:nth-child(even) .timeline-panel:after {
+            border-left-width: 0;
+            border-right-width: 14px;
+            left: -14px;
+            right: auto;
+            border-right-color: #ffffff;
+        }
+        
+        .timeline-title {
+            margin-top: 0;
+            color: #3498DB;
+            font-weight: bold;
+        }
+        
+        .timeline-heading p {
+            margin-bottom: 0;
+            color: #6c757d;
+        }
+        
+        .timeline-body {
+            margin-top: 10px;
+        }
+        
+        .timeline-body p {
+            margin-bottom: 0;
+        }
+        
+        .owner-arrow {
+            font-size: 20px;
+            color: #3498DB;
+            margin: 0 10px;
+        }
+        
+        .event-type-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+        
+        .event-type-相続 {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .event-type-売買 {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .event-type-贈与 {
+            background-color: #6f42c1;
+            color: white;
+        }
+        
+        @media (max-width: 767px) {
+            .timeline:before {
+                left: 40px;
+            }
+            
+            .timeline-item .timeline-badge {
+                left: 40px;
+                margin-left: 0;
+            }
+            
+            .timeline-item .timeline-panel {
+                width: calc(100% - 90px);
+                float: right;
+                margin-right: 0;
+                margin-left: 70px;
+            }
+            
+            .timeline-item:nth-child(even) .timeline-panel {
+                float: right;
+                margin-right: 0;
+                margin-left: 70px;
+            }
+            
+            .timeline-item .timeline-panel:before,
+            .timeline-item:nth-child(even) .timeline-panel:before {
+                border-left-width: 0;
+                border-right-width: 15px;
+                left: -15px;
+                right: auto;
+                border-right-color: #d4d4d4;
+            }
+            
+            .timeline-item .timeline-panel:after,
+            .timeline-item:nth-child(even) .timeline-panel:after {
+                border-left-width: 0;
+                border-right-width: 14px;
+                left: -14px;
+                right: auto;
+                border-right-color: #ffffff;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- サイドバー -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <div class="text-center mb-4">
+                        <h4 class="text-white">登記簿OCRアプリ</h4>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/">
+                                <i class="bi bi-speedometer2"></i>
+                                ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/scan">
+                                <i class="bi bi-camera"></i>
+                                スキャン・OCR
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/data">
+                                <i class="bi bi-database"></i>
+                                データ管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/reports">
+                                <i class="bi bi-file-earmark-text"></i>
+                                レポート
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/chat">
+                                <i class="bi bi-chat-dots"></i>
+                                対話型検索
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/settings">
+                                <i class="bi bi-gear"></i>
+                                設定
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- メインコンテンツ -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">所有者変更タイムライン</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a href="/data" class="btn btn-outline-secondary me-2">
+                            <i class="bi bi-arrow-left"></i> データ一覧に戻る
+                        </a>
+                        <button type="button" class="btn btn-outline-primary" onclick="window.print()">
+                            <i class="bi bi-printer"></i> 印刷
+                        </button>
+                    </div>
+                </div>
+
+                <!-- フラッシュメッセージ -->
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- 不動産情報 -->
+                <div class="property-info">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h3 class="mb-3">{{ property_info.property_number }}</h3>
+                            <p class="mb-1"><strong>所在:</strong> {{ property_info.address }}</p>
+                            <p class="mb-1"><strong>地番:</strong> {{ property_info.lot_number }}</p>
+                            <p class="mb-1"><strong>地積:</strong> {{ property_info.area }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">現在の所有者</h5>
+                                    <p class="card-text fs-4">{{ property_info.current_owner }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- タイムライン -->
+                <div class="timeline-container">
+                    <ul class="timeline">
+                        {% for item in history %}
+                            <li class="timeline-item">
+                                <div class="timeline-badge">
+                                    <i class="bi {% if item.event_type == '相続' %}bi-person-hearts{% elif item.event_type == '売買' %}bi-currency-exchange{% else %}bi-arrow-left-right{% endif %}"></i>
+                                </div>
+                                <div class="timeline-panel">
+                                    <div class="timeline-heading">
+                                        <h4 class="timeline-title">
+                                            {{ item.event_type }}
+                                            <span class="event-type-badge event-type-{{ item.event_type }}">{{ item.event_type }}</span>
+                                        </h4>
+                                        <p><i class="bi bi-calendar3"></i> {{ item.formatted_date }}</p>
+                                    </div>
+                                    <div class="timeline-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <span class="fw-bold">{{ item.previous_owner }}</span>
+                                            <span class="owner-arrow"><i class="bi bi-arrow-right"></i></span>
+                                            <span class="fw-bold">{{ item.new_owner }}</span>
+                                        </div>
+                                        {% if item.details %}
+                                            <p>{{ item.details }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- タイムラインの説明 -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <i class="bi bi-info-circle me-2"></i> タイムラインについて
+                    </div>
+                    <div class="card-body">
+                        <p>このタイムラインは、不動産番号 {{ property_info.property_number }} の所有者変更履歴を時系列で表示しています。</p>
+                        <p>各イベントには以下の情報が含まれます：</p>
+                        <ul>
+                            <li><strong>イベント種類</strong>: 相続、売買、贈与などの所有権移転の種類</li>
+                            <li><strong>日付</strong>: 所有権移転が行われた日付</li>
+                            <li><strong>所有者</strong>: 前所有者と新所有者の情報</li>
+                            <li><strong>詳細</strong>: イベントの詳細情報（利用可能な場合）</li>
+                        </ul>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="bi bi-lightbulb me-2"></i> <strong>ヒント:</strong> このタイムラインは、OCR処理された登記簿データから自動的に生成されています。より正確な履歴情報を得るには、複数の登記簿を処理してください。
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
