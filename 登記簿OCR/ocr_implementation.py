@@ -723,20 +723,21 @@ class RegistryOCR:
     
     def _calculate_confidence(self, text):
         """
-        OCR結果の信頼度を計算する
+        テキストの信頼度を計算する
         
         Args:
             text (str): OCRで抽出されたテキスト
             
         Returns:
-            float: 信頼度（0-100）
+            float: 信頼度スコア（0-100）
         """
-        # 基本的な文字認識率を見積もる
-        if not text.strip():
+        # テキストが空の場合は0を返す
+        if not text or len(text) < 10:
             return 0
         
-        # テキストの文字数
-        total_chars = len(text.strip())
+        # 文字数と行数
+        total_chars = len(text)
+        total_lines = text.count('\n') + 1
         
         # 疑わしい文字のパターン（記号の混合や不明瞭な文字列）
         suspicious_patterns = [
@@ -750,14 +751,21 @@ class RegistryOCR:
             suspicious_chars += len(re.findall(pattern, text))
         
         # 構造的な信頼度（項目の検出率）
-        structure_items = ['property_number', 'address', 'lot_number', 'area', 'owner_name']
+        # 新しいデータ構造に合わせて修正
+        structure_items = ['property_number', 'address', 'lot_number', 'area', 'owner']
         structure_score = 0
         
         # 一時的に構造データを抽出して評価
         data = self.extract_structured_data(text)
         for item in structure_items:
-            if data[item]:
-                structure_score += 20  # 各項目20%として計算
+            # 安全にアクセスするように修正
+            if item in data:
+                if item == 'owner':
+                    # ownerは辞書なので、nameフィールドを確認
+                    if data[item] and 'name' in data[item] and data[item]['name']:
+                        structure_score += 20
+                elif data[item]:  # その他の項目
+                    structure_score += 20  # 各項目20%として計算
         
         # 文字認識の信頼度（疑わしい文字が少ないほど高い）
         char_confidence = 100 - (suspicious_chars / max(total_chars, 1) * 100)
@@ -792,15 +800,33 @@ class RegistryOCR:
         elif output_format == 'csv':
             output_path = os.path.join(self.config['output_dir'], f"{output_filename}.csv")
             
-            # 構造化データをデータフレームに変換
+            # 構造化データの取得
+            structured_data = result.get('structured_data', {})
+            
+            # 新しいデータ構造に対応
+            owner_data = structured_data.get('owner', {})
+            owner_name = owner_data.get('name', '') if isinstance(owner_data, dict) else ''
+            owner_address = owner_data.get('address', '') if isinstance(owner_data, dict) else ''
+            
+            # 権利情報の処理
+            rights_info = []
+            for right in structured_data.get('rights', []):
+                if isinstance(right, dict):
+                    right_type = right.get('type', '')
+                    right_date = right.get('date', '')
+                    right_cause = right.get('cause', '')
+                    right_owner = right.get('owner', '')
+                    rights_info.append(f"{right_type}({right_date}, {right_cause}, {right_owner})")
+            
+            # データフレームに変換
             df_data = {
-                '不動産番号': [result['structured_data'].get('property_number', '')],
-                '所在': [result['structured_data'].get('address', '')],
-                '地番': [result['structured_data'].get('lot_number', '')],
-                '地積': [result['structured_data'].get('area', '')],
-                '所有者名': [result['structured_data'].get('owner_name', '')],
-                '所有者住所': [result['structured_data'].get('owner_address', '')],
-                '権利情報': [', '.join(result['structured_data'].get('rights', []))]
+                '不動産番号': [structured_data.get('property_number', '')],
+                '所在': [structured_data.get('address', '')],
+                '地番': [structured_data.get('lot_number', '')],
+                '地積': [f"{structured_data.get('area', '')} {structured_data.get('area_unit', '㎡')}"],
+                '所有者名': [owner_name],
+                '所有者住所': [owner_address],
+                '権利情報': ['; '.join(rights_info)]
             }
             
             df = pd.DataFrame(df_data)

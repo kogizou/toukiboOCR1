@@ -18,6 +18,13 @@ import sqlite3
 
 # OCR実装モジュールをインポート
 from ocr_implementation import RegistryOCR, logger as ocr_logger
+# OpenAI OCR実装モジュールをインポート
+try:
+    from openai_ocr import OpenAIOCR, logger as openai_ocr_logger
+    OPENAI_OCR_AVAILABLE = True
+except ImportError:
+    OPENAI_OCR_AVAILABLE = False
+    logger.warning("OpenAI OCR module not available. Install it with 'pip install openai'")
 # データベースモジュールをインポート
 from database import OCRDatabase, logger as db_logger
 # ユーザー認証モジュールをインポート
@@ -65,7 +72,28 @@ ocr_config = {
     'remove_lines': True,           # 線の除去
     'confidence_threshold': 70      # 信頼度閾値
 }
+
+# Tesseract OCRエンジンの初期化
 ocr_engine = RegistryOCR(ocr_config)
+
+# OpenAI OCRエンジンの初期化（利用可能な場合）
+openai_ocr_engine = None
+if OPENAI_OCR_AVAILABLE:
+    # デフォルトのOpenAI設定
+    openai_config = ocr_config.copy()
+    openai_config.update({
+        'api_key': os.environ.get('OPENAI_API_KEY', ''),  # 環境変数から取得
+        'model': 'gpt-4-vision-preview',
+        'temperature': 0.3,
+        'max_tokens': 4000,
+        'detail_level': 'high'
+    })
+    try:
+        openai_ocr_engine = OpenAIOCR(openai_config)
+        logger.info("OpenAI OCR engine initialized")
+    except Exception as e:
+        logger.error(f"Failed to initialize OpenAI OCR engine: {str(e)}")
+        openai_ocr_engine = None
 
 # データベースの初期化
 db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'registry_ocr.db')
@@ -149,11 +177,43 @@ def scan():
             'enhance_preprocessing': 'enhance_preprocessing' in request.form,
             'detect_orientation': 'detect_orientation' in request.form,
             'optimize_japanese': 'optimize_japanese' in request.form,
-            'remove_lines': 'remove_lines' in request.form
+            'remove_lines': 'remove_lines' in request.form,
+            # OpenAI設定
+            'use_openai': 'use_openai' in request.form,
+            'api_key': request.form.get('api_key', '')
         }
         
-        # OCRエンジンの設定を更新
+        # Tesseract OCRエンジンの設定を更新
         ocr_engine.config.update(ocr_settings)
+        
+        # OpenAI OCRエンジンの設定を更新（利用可能かつ使用する場合）
+        use_openai = ocr_settings.get('use_openai', False)
+        api_key = ocr_settings.get('api_key', '')
+        
+        # APIキーが指定された場合、環境変数にセット
+        if api_key:
+            os.environ['OPENAI_API_KEY'] = api_key
+        
+        # OpenAI OCRエンジンの初期化（まだ初期化されていない場合）
+        global openai_ocr_engine
+        if use_openai and OPENAI_OCR_AVAILABLE:
+            if not openai_ocr_engine or ocr_settings.get('api_key'):
+                try:
+                    openai_config = ocr_engine.config.copy()
+                    openai_config.update({
+                        'api_key': api_key or os.environ.get('OPENAI_API_KEY', ''),
+                        'model': 'gpt-4-vision-preview',
+                        'temperature': 0.3,
+                        'max_tokens': 4000,
+                        'detail_level': 'high'
+                    })
+                    openai_ocr_engine = OpenAIOCR(openai_config)
+                    logger.info("OpenAI OCR engine re-initialized with new settings")
+                except Exception as e:
+                    logger.error(f"Failed to initialize OpenAI OCR engine: {str(e)}")
+                    openai_ocr_engine = None
+                    flash('OpenAI OCRエンジンの初期化に失敗しました。APIキーを確認してください。')
+                    return redirect(request.url)
         
         # ファイルがリクエストに含まれているか確認
         if 'file' not in request.files:
@@ -175,9 +235,16 @@ def scan():
             
             try:
                 logger.info("Starting OCR process for file: %s", filename)
-                # OCR処理の実行
-                result = ocr_engine.process_image(file_path)
-                output_path = ocr_engine.save_result(result)
+                
+                # OCR処理の実行（OpenAIまたはTesseract）
+                if use_openai and openai_ocr_engine:
+                    logger.info("Using OpenAI OCR engine")
+                    result = openai_ocr_engine.process_image(file_path)
+                    output_path = openai_ocr_engine.save_result(result)
+                else:
+                    logger.info("Using Tesseract OCR engine")
+                    result = ocr_engine.process_image(file_path)
+                    output_path = ocr_engine.save_result(result)
                 
                 # データベースに結果を保存
                 db.save_ocr_result(result)
@@ -204,36 +271,19 @@ def scan():
         'enhance_preprocessing': ocr_engine.config.get('enhance_preprocessing', True),
         'detect_orientation': ocr_engine.config.get('detect_orientation', True),
         'optimize_japanese': ocr_engine.config.get('optimize_japanese', True),
-        'remove_lines': ocr_engine.config.get('remove_lines', True)
+        'remove_lines': ocr_engine.config.get('remove_lines', True),
+        'use_openai': False,  # デフォルトはOFF
+        'api_key': os.environ.get('OPENAI_API_KEY', '')
     }
     
-    # PSMオプションの定義
-    psm_options = {
-        0: 'オリエンテーションと単語の自動検出（OSD）のみ',
-        1: '自動ページセグメンテーションとOSD',
-        2: '自動ページセグメンテーション（OSDなし、OCRなし）',
-        3: '完全自動ページセグメンテーション（OSDなし）',
-        4: '可変サイズの単一列として仮定',
-        5: '均一なテキストブロックとして仮定',
-        6: '均一なテキストブロックとして仮定（単一の均一なブロック）',
-        7: '画像を単一のテキスト行として扱う',
-        8: '画像を単一の単語として扱う',
-        9: '画像を円の中の単一の単語として扱う',
-        10: '画像を単一の文字として扱う',
-        11: '疎なテキスト。あらゆる方向と順序でできるだけ多くのテキストを見つける',
-        12: '疎なテキストと強制的なOSD',
-        13: '生のライン。画像を単一のテキスト行として扱う（ヒューリスティックなモデル無効）'
+    # OpenAI OCRの利用可否情報を追加
+    openai_status = {
+        'available': OPENAI_OCR_AVAILABLE,
+        'initialized': openai_ocr_engine is not None,
+        'has_api_key': bool(os.environ.get('OPENAI_API_KEY'))
     }
     
-    # OEMオプションの定義
-    oem_options = {
-        0: 'レガシーエンジンのみ',
-        1: 'ニューラルネットワークLSTMエンジンのみ',
-        2: 'レガシー + LSTMエンジン',
-        3: 'デフォルト（利用可能な最適なエンジン）'
-    }
-    
-    return render_template('scan.html', ocr_settings=ocr_settings, psm_options=psm_options, oem_options=oem_options)
+    return render_template('scan.html', ocr_settings=ocr_settings, openai_status=openai_status)
 
 # 処理結果表示画面
 @app.route('/result/<filename>')
