@@ -1,0 +1,1131 @@
+2025-04-19 13:43:52,205 - ocr_implementation - INFO - RegistryOCR initialized with config: {'lang': 'jpn', 'tesseract_cmd': '/opt/homebrew/bin/tesseract', 'temp_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/temp', 'output_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/output', 'confidence_threshold': 70, 'dpi': 300, 'psm': 6, 'oem': 3, 'enhance_preprocessing': True, 'detect_orientation': True, 'optimize_japanese': True, 'remove_lines': True}
+2025-04-19 13:43:52,269 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 13:43:52,269 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 13:43:52,273 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 13:43:52,274 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:43:52,274 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:43:52,274 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 13:43:52,274 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:43:52,274 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 13:43:52,275 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 13:44:00,881 - ocr_implementation - INFO - RegistryOCR initialized with config: {'lang': 'jpn', 'tesseract_cmd': '/opt/homebrew/bin/tesseract', 'temp_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/temp', 'output_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/output', 'confidence_threshold': 70, 'dpi': 300, 'psm': 6, 'oem': 3, 'enhance_preprocessing': True, 'detect_orientation': True, 'optimize_japanese': True, 'remove_lines': True}
+2025-04-19 13:44:00,927 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 13:44:00,927 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 13:44:00,928 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 13:44:00,928 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:44:00,928 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:44:00,928 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 13:44:00,928 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:44:00,928 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 13:44:00,929 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 13:44:01,038 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5020
+2025-04-19 13:44:01,039 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-19 13:44:01,039 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 13:44:01,790 - ocr_implementation - INFO - RegistryOCR initialized with config: {'lang': 'jpn', 'tesseract_cmd': '/opt/homebrew/bin/tesseract', 'temp_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/temp', 'output_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/output', 'confidence_threshold': 70, 'dpi': 300, 'psm': 6, 'oem': 3, 'enhance_preprocessing': True, 'detect_orientation': True, 'optimize_japanese': True, 'remove_lines': True}
+2025-04-19 13:44:01,830 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 13:44:01,830 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 13:44:01,831 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 13:44:01,831 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:44:01,831 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:44:01,831 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 13:44:01,831 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:44:01,831 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 13:44:01,831 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 13:44:01,863 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 13:44:01,872 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 13:44:05,632 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:44:05] "[32mGET / HTTP/1.1[0m" 302 -
+2025-04-19 13:44:20,645 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:44:20] "GET / HTTP/1.1" 200 -
+2025-04-19 13:44:21,449 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:44:21] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-04-19 13:44:26,226 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:44:26] "GET /scan HTTP/1.1" 200 -
+2025-04-19 13:44:29,010 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:44:29] "GET /data HTTP/1.1" 200 -
+2025-04-19 13:44:29,953 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:44:29] "GET /reports HTTP/1.1" 200 -
+2025-04-19 13:44:30,464 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:44:30] "GET /data HTTP/1.1" 200 -
+2025-04-19 13:44:31,248 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:44:31] "GET /reports HTTP/1.1" 200 -
+2025-04-19 13:44:31,914 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:44:31] "GET /data HTTP/1.1" 200 -
+2025-04-19 13:44:32,262 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:44:32] "GET /scan HTTP/1.1" 200 -
+2025-04-19 13:44:32,870 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:44:32] "GET / HTTP/1.1" 200 -
+2025-04-19 13:44:38,409 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:44:38] "GET /scan HTTP/1.1" 200 -
+2025-04-19 13:44:45,244 - RegistryOCRApp - INFO - Starting OCR process for file: 3289-12025041701261723_2.PDF
+2025-04-19 13:44:45,245 - RegistryOCRApp - INFO - Using Tesseract OCR engine
+2025-04-19 13:44:45,245 - RegistryOCRApp - ERROR - OCR process failed: 'RegistryOCR' object has no attribute 'process_image'
+Traceback (most recent call last):
+  File "/Users/apple/Desktop/業務効率化/登記簿OCR/app.py", line 249, in scan
+    result = ocr_engine.process_image(file_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'RegistryOCR' object has no attribute 'process_image'
+2025-04-19 13:44:45,249 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:44:45] "[32mPOST /scan HTTP/1.1[0m" 302 -
+2025-04-19 13:44:45,255 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:44:45] "GET /scan HTTP/1.1" 200 -
+2025-04-19 13:45:43,237 - RegistryOCRApp - INFO - Starting OCR process for file: R6.pdf
+2025-04-19 13:45:43,244 - RegistryOCRApp - INFO - Using Tesseract OCR engine
+2025-04-19 13:45:43,244 - RegistryOCRApp - ERROR - OCR process failed: 'RegistryOCR' object has no attribute 'process_image'
+Traceback (most recent call last):
+  File "/Users/apple/Desktop/業務効率化/登記簿OCR/app.py", line 249, in scan
+    result = ocr_engine.process_image(file_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'RegistryOCR' object has no attribute 'process_image'
+2025-04-19 13:45:43,251 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:45:43] "[32mPOST /scan HTTP/1.1[0m" 302 -
+2025-04-19 13:45:43,264 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:45:43] "GET /scan HTTP/1.1" 200 -
+2025-04-19 13:45:55,136 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:45:55] "GET / HTTP/1.1" 200 -
+2025-04-19 13:45:59,077 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:45:59] "GET /scan HTTP/1.1" 200 -
+2025-04-19 13:45:59,725 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:45:59] "GET / HTTP/1.1" 200 -
+2025-04-19 13:46:01,002 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:46:01] "GET /scan HTTP/1.1" 200 -
+2025-04-19 13:46:01,363 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:46:01] "GET / HTTP/1.1" 200 -
+2025-04-19 13:46:01,892 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:46:01] "GET /scan HTTP/1.1" 200 -
+2025-04-19 13:46:02,266 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:46:02] "GET /data HTTP/1.1" 200 -
+2025-04-19 13:46:02,950 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:46:02] "GET /reports HTTP/1.1" 200 -
+2025-04-19 13:46:05,208 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:46:05] "GET /chat HTTP/1.1" 200 -
+2025-04-19 13:46:11,545 - RegistryOCRApp - ERROR - Error processing chat query: 'OUTPUT_DIR'
+Traceback (most recent call last):
+  File "/Users/apple/Desktop/業務効率化/登記簿OCR/app.py", line 1051, in chat_api
+    if os.path.exists(app.config['OUTPUT_DIR']):
+                      ~~~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'OUTPUT_DIR'
+2025-04-19 13:46:11,549 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:46:11] "[35m[1mPOST /api/chat HTTP/1.1[0m" 500 -
+2025-04-19 13:46:13,588 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:46:13] "GET /reports HTTP/1.1" 200 -
+2025-04-19 13:46:19,459 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:46:19] "GET /data HTTP/1.1" 200 -
+2025-04-19 13:46:22,465 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:46:22] "GET /scan HTTP/1.1" 200 -
+2025-04-19 13:46:23,075 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 13:46:23] "GET / HTTP/1.1" 200 -
+2025-04-19 13:47:03,166 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 13:47:03,520 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 13:47:04,954 - ocr_implementation - INFO - RegistryOCR initialized with config: {'lang': 'jpn', 'tesseract_cmd': '/opt/homebrew/bin/tesseract', 'temp_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/temp', 'output_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/output', 'confidence_threshold': 70, 'dpi': 300, 'psm': 6, 'oem': 3, 'enhance_preprocessing': True, 'detect_orientation': True, 'optimize_japanese': True, 'remove_lines': True}
+2025-04-19 13:47:04,999 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 13:47:04,999 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 13:47:05,000 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 13:47:05,000 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:47:05,000 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:47:05,000 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 13:47:05,001 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:47:05,001 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 13:47:05,001 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 13:47:05,037 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 13:47:05,045 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 13:47:17,146 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 13:47:17,330 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 13:47:18,303 - ocr_implementation - INFO - RegistryOCR initialized with config: {'lang': 'jpn', 'tesseract_cmd': '/opt/homebrew/bin/tesseract', 'temp_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/temp', 'output_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/output', 'confidence_threshold': 70, 'dpi': 300, 'psm': 6, 'oem': 3, 'enhance_preprocessing': True, 'detect_orientation': True, 'optimize_japanese': True, 'remove_lines': True}
+2025-04-19 13:47:18,345 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 13:47:18,345 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 13:47:18,346 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 13:47:18,346 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:47:18,346 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:47:18,346 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 13:47:18,347 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:47:18,347 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 13:47:18,347 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 13:47:18,375 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 13:47:18,384 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 13:47:32,484 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 13:47:32,664 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 13:47:33,645 - ocr_implementation - INFO - RegistryOCR initialized with config: {'lang': 'jpn', 'tesseract_cmd': '/opt/homebrew/bin/tesseract', 'temp_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/temp', 'output_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/output', 'confidence_threshold': 70, 'dpi': 300, 'psm': 6, 'oem': 3, 'enhance_preprocessing': True, 'detect_orientation': True, 'optimize_japanese': True, 'remove_lines': True}
+2025-04-19 13:47:33,688 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 13:47:33,689 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 13:47:33,689 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 13:47:33,689 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:47:33,689 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:47:33,689 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 13:47:33,690 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:47:33,690 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 13:47:33,690 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 13:47:33,720 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 13:47:33,729 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 13:47:57,917 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 13:47:58,109 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 13:47:59,081 - ocr_implementation - INFO - RegistryOCR initialized with config: {'lang': 'jpn', 'tesseract_cmd': '/opt/homebrew/bin/tesseract', 'temp_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/temp', 'output_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/output', 'confidence_threshold': 70, 'dpi': 300, 'psm': 6, 'oem': 3, 'enhance_preprocessing': True, 'detect_orientation': True, 'optimize_japanese': True, 'remove_lines': True}
+2025-04-19 13:47:59,123 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 13:47:59,123 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 13:47:59,124 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 13:47:59,124 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:47:59,124 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:47:59,124 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 13:47:59,124 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:47:59,124 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 13:47:59,125 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 13:47:59,155 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 13:47:59,164 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 13:48:21,327 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/app.py', reloading
+2025-04-19 13:48:21,515 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 13:48:22,509 - ocr_implementation - INFO - RegistryOCR initialized with config: {'lang': 'jpn', 'tesseract_cmd': '/opt/homebrew/bin/tesseract', 'temp_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/temp', 'output_dir': '/Users/apple/Desktop/業務効率化/登記簿OCR/output', 'confidence_threshold': 70, 'dpi': 300, 'psm': 6, 'oem': 3, 'enhance_preprocessing': True, 'detect_orientation': True, 'optimize_japanese': True, 'remove_lines': True}
+2025-04-19 13:48:22,551 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 13:48:22,551 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 13:48:22,552 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 13:48:22,552 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:48:22,552 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:48:22,552 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 13:48:22,552 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:48:22,552 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 13:48:22,553 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 13:48:22,585 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 13:48:22,592 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 13:48:58,890 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 13:48:59,238 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 13:49:00,662 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 13:49:00,662 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 13:49:00,663 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 13:49:00,663 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:49:00,663 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:49:00,663 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 13:49:00,664 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:49:00,664 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 13:49:00,664 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 13:49:00,700 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 13:49:00,712 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 13:49:24,919 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/app.py', reloading
+2025-04-19 13:49:25,110 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 13:49:26,147 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 13:49:26,147 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 13:49:26,148 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 13:49:26,148 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:49:26,148 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:49:26,148 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 13:49:26,148 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:49:26,148 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 13:49:26,149 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 13:49:26,178 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 13:49:26,189 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 13:50:08,552 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/app.py', reloading
+2025-04-19 13:50:08,736 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 13:50:09,813 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 13:50:09,813 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 13:50:09,814 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 13:50:09,814 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:50:09,814 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:50:09,814 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 13:50:09,814 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:50:09,814 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 13:50:09,814 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 13:50:09,846 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 13:50:09,855 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 13:50:31,044 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 13:50:31,234 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 13:50:32,224 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 13:50:32,224 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 13:50:32,224 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 13:50:32,224 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:50:32,224 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:50:32,225 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 13:50:32,225 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:50:32,225 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 13:50:32,225 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 13:50:32,256 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 13:50:32,266 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 13:50:46,396 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 13:50:46,577 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 13:50:47,617 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 13:50:47,617 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 13:50:47,618 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 13:50:47,618 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:50:47,618 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:50:47,618 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 13:50:47,619 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:50:47,619 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 13:50:47,619 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 13:50:47,648 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 13:50:47,661 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 13:51:02,776 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 13:51:02,979 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 13:51:04,111 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 13:51:04,111 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 13:51:04,111 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 13:51:04,112 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:51:04,112 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:51:04,112 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 13:51:04,112 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 13:51:04,112 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 13:51:04,113 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 13:51:04,160 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 13:51:04,168 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:19:32,036 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:19:32,382 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:19:33,803 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:19:33,803 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:19:33,806 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:19:33,806 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:19:33,806 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:19:33,807 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:19:33,807 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:19:33,807 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:19:33,807 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:19:33,841 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:19:33,851 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:19:44,008 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:19:44] "[35m[1mGET /scan HTTP/1.1[0m" 500 -
+2025-04-19 14:19:44,124 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:19:44] "GET /scan?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 200 -
+2025-04-19 14:19:44,124 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:19:44] "GET /scan?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 200 -
+2025-04-19 14:19:44,252 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:19:44] "GET /scan?__debugger__=yes&cmd=resource&f=console.png&s=JwTkjfUNopC9L0FBuS8n HTTP/1.1" 200 -
+2025-04-19 14:19:44,274 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:19:44] "GET /scan?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 200 -
+2025-04-19 14:22:18,293 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:22:18,295 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:22:18,298 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:22:18,298 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:22:18,298 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:22:18,298 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:22:18,299 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:22:18,299 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:22:18,299 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:22:34,409 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:22:34] "[32mGET / HTTP/1.1[0m" 302 -
+2025-04-19 14:28:05,991 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:05] "[35m[1mGET /scan HTTP/1.1[0m" 500 -
+2025-04-19 14:28:06,099 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:06] "[36mGET /scan?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-04-19 14:28:06,100 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:06] "[36mGET /scan?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-04-19 14:28:06,132 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:06] "[36mGET /scan?__debugger__=yes&cmd=resource&f=console.png&s=JwTkjfUNopC9L0FBuS8n HTTP/1.1[0m" 304 -
+2025-04-19 14:28:08,183 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:08] "[35m[1mGET /scan HTTP/1.1[0m" 500 -
+2025-04-19 14:28:08,199 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:08] "[36mGET /scan?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-04-19 14:28:08,199 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:08] "[36mGET /scan?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-04-19 14:28:08,218 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:08] "[36mGET /scan?__debugger__=yes&cmd=resource&f=console.png&s=JwTkjfUNopC9L0FBuS8n HTTP/1.1[0m" 304 -
+2025-04-19 14:28:08,226 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:08] "[36mGET /scan?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2025-04-19 14:28:10,035 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:10] "[35m[1mGET /scan HTTP/1.1[0m" 500 -
+2025-04-19 14:28:10,056 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:10] "[36mGET /scan?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-04-19 14:28:10,056 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:10] "[36mGET /scan?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-04-19 14:28:10,061 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:10] "[36mGET /scan?__debugger__=yes&cmd=resource&f=console.png&s=JwTkjfUNopC9L0FBuS8n HTTP/1.1[0m" 304 -
+2025-04-19 14:28:11,685 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:11] "GET / HTTP/1.1" 200 -
+2025-04-19 14:28:11,819 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:11] "GET / HTTP/1.1" 200 -
+2025-04-19 14:28:11,971 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:11] "GET / HTTP/1.1" 200 -
+2025-04-19 14:28:12,912 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:12] "[35m[1mGET /scan HTTP/1.1[0m" 500 -
+2025-04-19 14:28:12,940 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:12] "[36mGET /scan?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-04-19 14:28:12,941 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:12] "[36mGET /scan?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-04-19 14:28:12,945 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:12] "[36mGET /scan?__debugger__=yes&cmd=resource&f=console.png&s=JwTkjfUNopC9L0FBuS8n HTTP/1.1[0m" 304 -
+2025-04-19 14:28:27,886 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:27] "GET / HTTP/1.1" 200 -
+2025-04-19 14:28:33,412 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:33] "[35m[1mGET /scan HTTP/1.1[0m" 500 -
+2025-04-19 14:28:33,437 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:33] "[36mGET /scan?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-04-19 14:28:33,439 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:33] "[36mGET /scan?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-04-19 14:28:33,453 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:33] "[36mGET /scan?__debugger__=yes&cmd=resource&f=console.png&s=JwTkjfUNopC9L0FBuS8n HTTP/1.1[0m" 304 -
+2025-04-19 14:28:42,931 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:42] "[35m[1mGET /scan HTTP/1.1[0m" 500 -
+2025-04-19 14:28:42,951 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:42] "[36mGET /scan?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-04-19 14:28:42,951 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:42] "[36mGET /scan?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-04-19 14:28:42,964 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:42] "[36mGET /scan?__debugger__=yes&cmd=resource&f=console.png&s=JwTkjfUNopC9L0FBuS8n HTTP/1.1[0m" 304 -
+2025-04-19 14:28:47,158 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:28:47] "[36mGET /scan?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-04-19 14:30:10,759 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:30:11,038 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:30:13,296 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:30:13,297 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:30:13,348 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:30:13,348 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:30:13,348 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:30:13,349 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:30:13,349 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:30:13,349 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:30:13,350 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:30:13,413 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:30:13,472 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:30:48,115 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:30:48,115 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:30:48,116 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:30:48,116 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:30:48,116 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:30:48,116 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:30:48,117 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:30:48,117 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:30:48,117 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:32:34,376 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:32:34,618 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:32:36,339 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:32:36,340 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:32:36,342 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:32:36,343 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:32:36,343 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:32:36,343 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:32:36,343 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:32:36,343 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:32:36,344 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:32:36,374 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:32:36,382 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:33:03,607 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:33:03,792 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:33:04,805 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:33:04,805 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:33:04,806 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:33:04,806 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:33:04,806 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:33:04,806 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:33:04,807 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:33:04,807 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:33:04,807 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:33:04,833 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:33:04,840 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:33:27,137 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:33:27,345 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:33:28,339 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:33:28,340 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:33:28,340 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:33:28,340 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:33:28,340 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:33:28,340 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:33:28,341 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:33:28,341 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:33:28,341 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:33:28,370 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:33:28,381 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:33:31,432 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:33:31,619 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:33:32,716 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:33:32,716 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:33:32,716 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:33:32,716 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:33:32,716 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:33:32,716 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:33:32,717 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:33:32,717 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:33:32,717 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:33:32,743 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:33:32,750 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:33:59,955 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:34:00,140 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:34:01,617 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:34:01,617 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:34:01,618 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:34:01,618 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:34:01,618 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:34:01,618 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:34:01,619 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:34:01,619 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:34:01,619 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:34:01,651 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:34:01,658 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:34:10,730 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:34:10,925 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:34:12,111 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:34:12,112 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:34:12,112 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:34:12,112 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:34:12,112 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:34:12,113 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:34:12,113 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:34:12,113 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:34:12,113 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:34:12,145 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:34:12,158 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:34:42,400 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:34:42,592 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:34:43,725 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:34:43,725 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:34:43,726 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:34:43,726 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:34:43,726 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:34:43,726 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:34:43,726 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:34:43,727 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:34:43,727 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:34:43,763 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:34:43,775 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:35:25,497 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:35:25,778 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:35:27,202 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:35:27,202 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:35:27,205 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:35:27,205 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:35:27,205 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:35:27,205 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:35:27,205 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:35:27,205 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:35:27,206 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:35:27,238 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:35:27,247 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:35:30,279 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:35:31,202 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:35:32,638 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:35:32,639 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:35:32,640 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:35:32,640 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:35:32,641 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:35:32,641 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:35:32,642 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:35:32,642 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:35:32,643 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:35:32,684 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:35:32,695 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:35:59,626 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:35:59,980 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:36:02,082 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:36:02,082 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:36:02,085 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:36:02,085 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:36:02,085 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:36:02,085 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:36:02,085 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:36:02,085 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:36:02,085 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:36:02,122 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:36:02,131 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:36:20,758 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:36:20,992 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:36:22,556 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:36:22,556 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:36:22,558 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:36:22,558 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:36:22,558 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:36:22,558 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:36:22,559 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:36:22,559 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:36:22,559 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:36:22,595 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:36:22,606 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:37:56,413 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:37:56,774 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:37:58,502 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:37:58,502 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:37:58,506 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:37:58,506 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:37:58,506 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:37:58,506 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:37:58,507 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:37:58,507 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:37:58,507 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:37:58,541 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:37:58,554 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:38:39,459 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:38:40,238 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:38:43,162 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:38:43,162 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:38:43,164 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:38:43,164 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:38:43,165 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:38:43,165 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:38:43,165 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:38:43,165 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:38:43,165 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:38:43,214 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:38:43,247 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:40:48,428 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:40:48,428 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:40:48,431 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:40:48,431 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:40:48,432 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:40:48,432 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:40:48,432 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:40:48,432 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:40:48,433 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:42:42,380 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:42:42] "[32mGET / HTTP/1.1[0m" 302 -
+2025-04-19 14:57:00,586 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:57:00] "GET / HTTP/1.1" 200 -
+2025-04-19 14:57:04,717 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:57:04] "[35m[1mGET /scan HTTP/1.1[0m" 500 -
+2025-04-19 14:57:04,741 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:57:04] "[36mGET /scan?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-04-19 14:57:04,741 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:57:04] "[36mGET /scan?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-04-19 14:57:04,748 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:57:04] "GET /scan?__debugger__=yes&cmd=resource&f=console.png&s=yHyae2mQCB6uR2HlhuDn HTTP/1.1" 200 -
+2025-04-19 14:57:06,596 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:57:06] "[35m[1mGET /scan HTTP/1.1[0m" 500 -
+2025-04-19 14:57:06,609 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:57:06] "[36mGET /scan?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-04-19 14:57:06,609 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:57:06] "[36mGET /scan?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-04-19 14:57:06,618 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:57:06] "[36mGET /scan?__debugger__=yes&cmd=resource&f=console.png&s=yHyae2mQCB6uR2HlhuDn HTTP/1.1[0m" 304 -
+2025-04-19 14:57:06,630 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:57:06] "[36mGET /scan?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2025-04-19 14:57:11,019 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:57:11] "[35m[1mGET /scan HTTP/1.1[0m" 500 -
+2025-04-19 14:57:11,034 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:57:11] "[36mGET /scan?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-04-19 14:57:11,035 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:57:11] "[36mGET /scan?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-04-19 14:57:11,051 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 14:57:11] "[36mGET /scan?__debugger__=yes&cmd=resource&f=console.png&s=yHyae2mQCB6uR2HlhuDn HTTP/1.1[0m" 304 -
+2025-04-19 14:58:20,016 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:58:20,470 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:58:21,963 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:58:21,963 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:58:21,966 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:58:21,966 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:58:21,966 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:58:21,966 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:58:21,967 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:58:21,967 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:58:21,967 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:58:21,994 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:58:22,001 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 14:59:40,289 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 14:59:40,552 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 14:59:40,896 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:59:40,896 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:59:40,899 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:59:40,899 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:59:40,899 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:59:40,899 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:59:40,900 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:59:40,900 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:59:40,900 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:59:41,597 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 14:59:41,598 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 14:59:41,598 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 14:59:41,598 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:59:41,598 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:59:41,598 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 14:59:41,599 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 14:59:41,599 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 14:59:41,599 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 14:59:41,632 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 14:59:41,648 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:23:06,161 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:23:06] "[32mGET / HTTP/1.1[0m" 302 -
+2025-04-19 15:25:45,232 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:25:45,701 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:25:47,183 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:25:47,183 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:25:47,186 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:25:47,186 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:25:47,186 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:25:47,186 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:25:47,187 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:25:47,187 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:25:47,187 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:25:47,221 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:25:47,229 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:26:11,552 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:26:11,763 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:26:13,164 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:26:13,164 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:26:13,170 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:26:13,170 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:26:13,170 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:26:13,170 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:26:13,171 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:26:13,171 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:26:13,171 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:26:13,222 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:26:13,231 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:26:37,457 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:26:37,620 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:26:38,660 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:26:38,660 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:26:38,661 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:26:38,661 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:26:38,661 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:26:38,661 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:26:38,661 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:26:38,661 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:26:38,662 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:26:38,690 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:26:38,696 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:27:23,151 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:27:23,395 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:27:24,430 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:27:24,430 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:27:24,431 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:27:24,431 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:27:24,431 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:27:24,431 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:27:24,432 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:27:24,432 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:27:24,432 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:27:24,464 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:27:24,473 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:32:35,778 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:32:35,778 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:32:35,789 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:32:35,789 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:32:35,791 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:32:35,793 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:32:35,794 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:32:35,795 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:32:35,796 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:32:35,937 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5023
+2025-04-19 15:32:35,937 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-19 15:32:35,938 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:32:36,867 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:32:36,867 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:32:36,868 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:32:36,868 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:32:36,868 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:32:36,868 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:32:36,869 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:32:36,869 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:32:36,869 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:32:36,899 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:32:36,913 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:36:16,815 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:16] "[35m[1mGET /scan HTTP/1.1[0m" 500 -
+2025-04-19 15:36:16,893 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:16] "[36mGET /scan?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-04-19 15:36:16,894 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:16] "[36mGET /scan?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-04-19 15:36:16,927 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:16] "GET /scan?__debugger__=yes&cmd=resource&f=console.png&s=2YjxWWtytjUnueRpBynF HTTP/1.1" 200 -
+2025-04-19 15:36:16,950 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:16] "[36mGET /scan?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2025-04-19 15:36:18,842 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:18] "[35m[1mGET /scan HTTP/1.1[0m" 500 -
+2025-04-19 15:36:18,895 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:18] "[36mGET /scan?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-04-19 15:36:18,903 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:18] "[36mGET /scan?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-04-19 15:36:18,965 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:18] "[36mGET /scan?__debugger__=yes&cmd=resource&f=console.png&s=2YjxWWtytjUnueRpBynF HTTP/1.1[0m" 304 -
+2025-04-19 15:36:18,982 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:18] "[36mGET /scan?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2025-04-19 15:36:42,936 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:42] "GET / HTTP/1.1" 200 -
+2025-04-19 15:36:44,867 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:44] "[35m[1mGET /scan HTTP/1.1[0m" 500 -
+2025-04-19 15:36:44,922 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:44] "[36mGET /scan?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-04-19 15:36:44,924 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:44] "[36mGET /scan?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-04-19 15:36:44,928 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:44] "[36mGET /scan?__debugger__=yes&cmd=resource&f=console.png&s=2YjxWWtytjUnueRpBynF HTTP/1.1[0m" 304 -
+2025-04-19 15:36:46,542 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:46] "GET / HTTP/1.1" 200 -
+2025-04-19 15:36:48,132 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:48] "GET /data HTTP/1.1" 200 -
+2025-04-19 15:36:49,742 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:49] "GET /reports HTTP/1.1" 200 -
+2025-04-19 15:36:57,134 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:36:57] "GET / HTTP/1.1" 200 -
+2025-04-19 15:37:00,355 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:37:00] "GET /chat HTTP/1.1" 200 -
+2025-04-19 15:37:03,603 - RegistryOCRApp - ERROR - Error processing chat query: 'OUTPUT_DIR'
+Traceback (most recent call last):
+  File "/Users/apple/Desktop/業務効率化/登記簿OCR/app.py", line 1014, in chat_api
+    if os.path.exists(app.config['OUTPUT_DIR']):
+                      ~~~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'OUTPUT_DIR'
+2025-04-19 15:37:03,607 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:37:03] "[35m[1mPOST /api/chat HTTP/1.1[0m" 500 -
+2025-04-19 15:37:14,032 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:37:14] "GET / HTTP/1.1" 200 -
+2025-04-19 15:37:15,550 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:37:15] "GET /settings HTTP/1.1" 200 -
+2025-04-19 15:37:43,833 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:37:43] "GET / HTTP/1.1" 200 -
+2025-04-19 15:45:28,521 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/app.py', reloading
+2025-04-19 15:45:28,942 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:45:30,742 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:45:30,742 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:45:30,745 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:45:30,745 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:45:30,745 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:45:30,746 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:45:30,746 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:45:30,746 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:45:30,746 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:45:30,785 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:45:30,798 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:46:12,192 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/app.py', reloading
+2025-04-19 15:46:12,427 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:46:13,857 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:46:13,857 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:46:13,860 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:46:13,860 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:46:13,861 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:46:13,861 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:46:13,861 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:46:13,861 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:46:13,862 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:46:13,893 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:46:13,904 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:48:36,410 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:48:36,410 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:48:36,414 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:48:36,414 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:48:36,414 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:48:36,414 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:48:36,415 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:48:36,415 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:48:36,415 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:50:50,291 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:50:50,291 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:50:50,294 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:50:50,294 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:50:50,295 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:50:50,295 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:50:50,296 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:50:50,297 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:50:50,298 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:52:16,809 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:52:16] "GET / HTTP/1.1" 200 -
+2025-04-19 15:52:17,937 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:52:17] "GET /scan HTTP/1.1" 200 -
+2025-04-19 15:52:26,836 - app - INFO - アップロードされたファイル: R6.pdf, パス: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/R6.pdf
+2025-04-19 15:52:26,839 - app - INFO - Tesseract OCRエンジンを使用します
+2025-04-19 15:52:26,839 - app - INFO - OCR処理を開始します
+2025-04-19 15:52:26,839 - registry_ocr - INFO - 画像処理開始: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/R6.pdf
+2025-04-19 15:52:27,105 - registry_ocr - ERROR - 画像読み込みエラー: cannot identify image file '/Users/apple/Desktop/業務効率化/登記簿OCR/uploads/R6.pdf'
+2025-04-19 15:52:27,106 - app - INFO - OCR処理が完了しました。信頼度: 0.0
+2025-04-19 15:52:27,109 - app - ERROR - Traceback (most recent call last):
+  File "/Users/apple/Desktop/業務効率化/登記簿OCR/app.py", line 326, in scan
+    db.save_ocr_result(data_id, filename, json.dumps(result_data, ensure_ascii=False))
+TypeError: OCRDatabase.save_ocr_result() takes 2 positional arguments but 4 were given
+
+2025-04-19 15:52:27,110 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:52:27] "POST /scan HTTP/1.1" 200 -
+2025-04-19 15:52:35,070 - app - INFO - アップロードされたファイル: 3289-12025041701261723_2.PDF, パス: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF
+2025-04-19 15:52:35,071 - app - INFO - Tesseract OCRエンジンを使用します
+2025-04-19 15:52:35,071 - app - INFO - OCR処理を開始します
+2025-04-19 15:52:35,071 - registry_ocr - INFO - 画像処理開始: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF
+2025-04-19 15:52:35,072 - registry_ocr - ERROR - 画像読み込みエラー: cannot identify image file '/Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF'
+2025-04-19 15:52:35,072 - app - INFO - OCR処理が完了しました。信頼度: 0.0
+2025-04-19 15:52:35,074 - app - ERROR - Traceback (most recent call last):
+  File "/Users/apple/Desktop/業務効率化/登記簿OCR/app.py", line 326, in scan
+    db.save_ocr_result(data_id, filename, json.dumps(result_data, ensure_ascii=False))
+TypeError: OCRDatabase.save_ocr_result() takes 2 positional arguments but 4 were given
+
+2025-04-19 15:52:35,074 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:52:35] "POST /scan HTTP/1.1" 200 -
+2025-04-19 15:53:16,191 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/app.py', reloading
+2025-04-19 15:53:16,499 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:53:18,125 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:53:18,125 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:53:18,127 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:53:18,127 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:53:18,128 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:53:18,128 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:53:18,128 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:53:18,128 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:53:18,129 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:53:18,161 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:53:18,173 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:53:25,194 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:53:25,195 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:53:25,195 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:53:25,195 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:53:25,195 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:53:25,196 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:53:25,198 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:53:25,198 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:53:25,198 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:53:25,252 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5023
+2025-04-19 15:53:25,252 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-19 15:53:25,253 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:53:26,030 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:53:26,030 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:53:26,030 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:53:26,030 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:53:26,030 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:53:26,030 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:53:26,031 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:53:26,031 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:53:26,031 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:53:26,059 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:53:26,066 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:53:44,181 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:53:44] "GET / HTTP/1.1" 200 -
+2025-04-19 15:53:44,350 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:53:44] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-04-19 15:53:46,144 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:53:46] "GET /scan HTTP/1.1" 200 -
+2025-04-19 15:53:51,150 - app - INFO - アップロードされたファイル: R6.pdf, パス: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/R6.pdf
+2025-04-19 15:53:51,151 - app - INFO - Tesseract OCRエンジンを使用します
+2025-04-19 15:53:51,151 - app - INFO - OCR処理を開始します
+2025-04-19 15:53:51,151 - registry_ocr - INFO - 画像処理開始: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/R6.pdf
+2025-04-19 15:53:51,240 - registry_ocr - ERROR - 画像読み込みエラー: cannot identify image file '/Users/apple/Desktop/業務効率化/登記簿OCR/uploads/R6.pdf'
+2025-04-19 15:53:51,240 - app - INFO - OCR処理が完了しました。信頼度: 0.0
+2025-04-19 15:53:51,244 - RegistryOCRDB - INFO - OCR result saved to database with ID: 9
+2025-04-19 15:53:51,247 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:53:51] "[32mPOST /scan HTTP/1.1[0m" 302 -
+2025-04-19 15:53:51,258 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:53:51] "GET /result/ab5c330e-4af7-493e-9836-2a7fc23e8feb.json HTTP/1.1" 200 -
+2025-04-19 15:53:51,291 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:53:51] "GET /original_image/R6.pdf HTTP/1.1" 200 -
+2025-04-19 15:53:51,292 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:53:51] "GET /debug_image/preprocessed HTTP/1.1" 200 -
+2025-04-19 15:54:00,996 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:54:00] "GET / HTTP/1.1" 200 -
+2025-04-19 15:54:01,748 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:54:01] "GET /scan HTTP/1.1" 200 -
+2025-04-19 15:54:06,833 - app - INFO - アップロードされたファイル: 3289-12025041701261723_2.PDF, パス: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF
+2025-04-19 15:54:06,834 - app - INFO - Tesseract OCRエンジンを使用します
+2025-04-19 15:54:06,834 - app - INFO - OCR処理を開始します
+2025-04-19 15:54:06,834 - registry_ocr - INFO - 画像処理開始: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF
+2025-04-19 15:54:06,835 - registry_ocr - ERROR - 画像読み込みエラー: cannot identify image file '/Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF'
+2025-04-19 15:54:06,835 - app - INFO - OCR処理が完了しました。信頼度: 0.0
+2025-04-19 15:54:06,839 - RegistryOCRDB - INFO - OCR result saved to database with ID: 10
+2025-04-19 15:54:06,839 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:54:06] "[32mPOST /scan HTTP/1.1[0m" 302 -
+2025-04-19 15:54:06,846 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:54:06] "GET /result/77dc3658-8b4c-4a6f-baa2-71c79c83151f.json HTTP/1.1" 200 -
+2025-04-19 15:54:06,883 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:54:06] "[36mGET /debug_image/preprocessed HTTP/1.1[0m" 304 -
+2025-04-19 15:54:06,891 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:54:06] "GET /original_image/3289-12025041701261723_2.PDF HTTP/1.1" 200 -
+2025-04-19 15:54:15,435 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:54:15] "GET / HTTP/1.1" 200 -
+2025-04-19 15:54:18,873 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:54:18] "GET /result/77dc3658-8b4c-4a6f-baa2-71c79c83151f.json HTTP/1.1" 200 -
+2025-04-19 15:54:18,889 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:54:18] "[36mGET /debug_image/preprocessed HTTP/1.1[0m" 304 -
+2025-04-19 15:54:18,892 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 15:54:18] "[35m[1mGET /original_image/3289-12025041701261723_2.PDF HTTP/1.1[0m" 206 -
+2025-04-19 15:56:19,289 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:56:19,590 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:56:19,889 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:56:20,137 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:56:21,242 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70}
+2025-04-19 15:56:21,242 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70}
+2025-04-19 15:56:21,291 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:56:21,291 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:56:21,291 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:56:21,291 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:56:21,295 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:56:21,295 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:56:21,295 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:56:21,295 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:56:21,295 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:56:21,295 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:56:21,296 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:56:21,297 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:56:21,297 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:56:21,297 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:56:21,298 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:56:21,298 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:56:21,298 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:56:21,298 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:56:21,351 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:56:21,351 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:56:21,363 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:56:21,365 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:57:00,106 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:57:00,111 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:57:00,745 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:57:00,751 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:57:02,318 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70}
+2025-04-19 15:57:02,318 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70}
+2025-04-19 15:57:02,368 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:57:02,368 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:57:02,369 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:57:02,369 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:57:02,369 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:57:02,369 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:57:02,369 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:57:02,369 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:57:02,369 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:57:02,369 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:57:02,370 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:57:02,370 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:57:02,370 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:57:02,370 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:57:02,370 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:57:02,370 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:57:02,370 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:57:02,370 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:57:02,401 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:57:02,407 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:57:02,411 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:57:02,416 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:57:31,708 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:57:31,711 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:57:31,978 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:57:31,978 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:57:33,118 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70}
+2025-04-19 15:57:33,118 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70}
+2025-04-19 15:57:33,166 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:57:33,166 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:57:33,166 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:57:33,166 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:57:33,166 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:57:33,166 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:57:33,166 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:57:33,166 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:57:33,166 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:57:33,167 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:57:33,167 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:57:33,167 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:57:33,167 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:57:33,167 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:57:33,167 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:57:33,167 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:57:33,167 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:57:33,167 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:57:33,201 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:57:33,207 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:57:33,215 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:57:33,216 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:58:19,690 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:58:19,702 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:58:19,942 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:58:19,941 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:58:21,142 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70}
+2025-04-19 15:58:21,142 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70}
+2025-04-19 15:58:21,190 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:58:21,190 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:58:21,190 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:58:21,190 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:58:21,191 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:58:21,191 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:58:21,191 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:58:21,191 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:58:21,191 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:58:21,191 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:58:21,192 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:58:21,192 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:58:21,192 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:58:21,192 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:58:21,192 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:58:21,192 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:58:21,193 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:58:21,193 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:58:21,224 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:58:21,226 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:58:21,234 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:58:21,235 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:58:51,523 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:58:51,523 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:58:51,771 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:58:51,771 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:58:52,833 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70}
+2025-04-19 15:58:52,833 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70}
+2025-04-19 15:58:52,883 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:58:52,883 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:58:52,883 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:58:52,883 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:58:52,883 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:58:52,883 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:58:52,883 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:58:52,883 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:58:52,883 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:58:52,884 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:58:52,884 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:58:52,884 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:58:52,884 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:58:52,884 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:58:52,884 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:58:52,884 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:58:52,884 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:58:52,884 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:58:52,919 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:58:52,924 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:58:52,932 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:58:52,935 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:59:12,231 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:59:12,231 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:59:12,528 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:59:12,533 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:59:13,633 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70}
+2025-04-19 15:59:13,633 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70}
+2025-04-19 15:59:13,681 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:59:13,681 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:59:13,681 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:59:13,681 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:59:13,681 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:59:13,681 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:59:13,681 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:13,681 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:13,681 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:13,681 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:13,682 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:59:13,682 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:59:13,682 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:13,682 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:59:13,682 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:13,682 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:59:13,682 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:59:13,682 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:59:13,713 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:59:13,713 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:59:13,724 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:59:13,724 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:59:22,801 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:59:22,811 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 15:59:23,141 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:59:23,143 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:59:24,185 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70}
+2025-04-19 15:59:24,185 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70}
+2025-04-19 15:59:24,230 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:59:24,230 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:59:24,230 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:59:24,230 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:59:24,231 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:59:24,231 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:59:24,231 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:24,231 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:24,231 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:24,231 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:24,231 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:59:24,231 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:59:24,231 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:24,231 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:24,231 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:59:24,231 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:59:24,232 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:59:24,232 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:59:24,263 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:59:24,264 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:59:24,274 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:59:24,274 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:59:29,356 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/app.py', reloading
+2025-04-19 15:59:29,356 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/app.py', reloading
+2025-04-19 15:59:29,588 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:59:29,588 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:59:30,367 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70, "use_hybrid_approach": true, "contrast_enhancement": true, "denoise_level": 2, "edge_enhancement": true, "word_segmentation": true, "tesseract_whitelist": null, "use_language_dictionary": true}
+2025-04-19 15:59:30,367 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70, "use_hybrid_approach": true, "contrast_enhancement": true, "denoise_level": 2, "edge_enhancement": true, "word_segmentation": true, "tesseract_whitelist": null, "use_language_dictionary": true}
+2025-04-19 15:59:30,403 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:59:30,403 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:59:30,403 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:59:30,403 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:59:30,403 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:59:30,403 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:59:30,403 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:30,403 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:30,403 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:30,403 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:30,403 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:59:30,403 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:59:30,404 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:30,404 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:59:30,404 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:30,404 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:59:30,404 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:59:30,404 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:59:30,430 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:59:30,436 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:59:30,443 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:59:30,448 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:59:48,585 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/app.py', reloading
+2025-04-19 15:59:48,585 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/app.py', reloading
+2025-04-19 15:59:48,829 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:59:48,829 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 15:59:50,199 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70, "use_hybrid_approach": true, "contrast_enhancement": true, "denoise_level": 2, "edge_enhancement": true, "word_segmentation": true, "tesseract_whitelist": null, "use_language_dictionary": true}
+2025-04-19 15:59:50,199 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70, "use_hybrid_approach": true, "contrast_enhancement": true, "denoise_level": 2, "edge_enhancement": true, "word_segmentation": true, "tesseract_whitelist": null, "use_language_dictionary": true}
+2025-04-19 15:59:50,248 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:59:50,248 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 15:59:50,248 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:59:50,248 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 15:59:50,248 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:59:50,248 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 15:59:50,248 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:50,248 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:50,248 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:50,248 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:50,249 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:59:50,249 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 15:59:50,249 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:50,249 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 15:59:50,249 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:59:50,249 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 15:59:50,249 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:59:50,249 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 15:59:50,281 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:59:50,285 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 15:59:50,293 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 15:59:50,298 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 16:00:02,510 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/app.py', reloading
+2025-04-19 16:00:02,510 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/app.py', reloading
+2025-04-19 16:00:02,759 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 16:00:02,759 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 16:00:03,798 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70, "use_hybrid_approach": true, "contrast_enhancement": true, "denoise_level": 2, "edge_enhancement": true, "word_segmentation": true, "tesseract_whitelist": null, "use_language_dictionary": true}
+2025-04-19 16:00:03,798 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70, "use_hybrid_approach": true, "contrast_enhancement": true, "denoise_level": 2, "edge_enhancement": true, "word_segmentation": true, "tesseract_whitelist": null, "use_language_dictionary": true}
+2025-04-19 16:00:03,843 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 16:00:03,843 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 16:00:03,843 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 16:00:03,843 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 16:00:03,843 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 16:00:03,843 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 16:00:03,843 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 16:00:03,843 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 16:00:03,844 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 16:00:03,844 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 16:00:03,844 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 16:00:03,844 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 16:00:03,844 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 16:00:03,844 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 16:00:03,844 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 16:00:03,844 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 16:00:03,845 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 16:00:03,845 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 16:00:03,879 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 16:00:03,887 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 16:00:03,890 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 16:00:03,896 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 16:01:19,838 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/app.py', reloading
+2025-04-19 16:01:19,854 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/app.py', reloading
+2025-04-19 16:01:20,157 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 16:01:20,158 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 16:01:22,502 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70, "use_hybrid_approach": true, "contrast_enhancement": true, "denoise_level": 2, "edge_enhancement": true, "word_segmentation": true, "tesseract_whitelist": null, "use_language_dictionary": true}
+2025-04-19 16:01:22,502 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": true, "detect_orientation": true, "optimize_japanese": true, "remove_lines": true, "confidence_threshold": 70, "use_hybrid_approach": true, "contrast_enhancement": true, "denoise_level": 2, "edge_enhancement": true, "word_segmentation": true, "tesseract_whitelist": null, "use_language_dictionary": true}
+2025-04-19 16:01:22,553 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 16:01:22,553 - OpenAI_OCR - INFO - OpenAI client initialized successfully
+2025-04-19 16:01:22,553 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 16:01:22,553 - RegistryOCRApp - INFO - OpenAI OCR engine initialized
+2025-04-19 16:01:22,556 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 16:01:22,556 - RegistryOCRDB - INFO - Database tables created successfully
+2025-04-19 16:01:22,556 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 16:01:22,556 - RegistryOCRDB - INFO - OCRDatabase initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 16:01:22,556 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 16:01:22,556 - RegistryOCRApp - INFO - Database initialized at: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 16:01:22,556 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 16:01:22,556 - RegistryOCRAuth - INFO - User authentication tables created successfully
+2025-04-19 16:01:22,556 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 16:01:22,556 - RegistryOCRAuth - INFO - UserAuth initialized with database: /Users/apple/Desktop/業務効率化/登記簿OCR/registry_ocr.db
+2025-04-19 16:01:22,556 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 16:01:22,556 - RegistryOCRApp - INFO - User authentication initialized
+2025-04-19 16:01:22,557 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 16:01:22,557 - RegistryOCRApp - INFO - Loaded config from config.json
+2025-04-19 16:01:22,596 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 16:01:22,599 - werkzeug - WARNING -  * Debugger is active!
+2025-04-19 16:01:22,614 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 16:01:22,614 - werkzeug - INFO -  * Debugger PIN: 149-809-259
+2025-04-19 16:04:14,171 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 16:04:14] "GET / HTTP/1.1" 200 -
+2025-04-19 16:04:15,094 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 16:04:15] "GET /scan HTTP/1.1" 200 -
+2025-04-19 16:04:19,978 - app - INFO - アップロードされたファイル: 3289-12025041701261723_2.PDF, パス: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF
+2025-04-19 16:04:19,979 - ocr_implementation - INFO - RegistryOCR initialized with config: {"lang": "jpn", "dpi": 300, "psm": 6, "oem": 3, "config": "--tessdata-dir \"tessdata\"", "temp_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/temp", "output_dir": "/Users/apple/Desktop/業務効率化/登記簿OCR/output", "enhance_preprocessing": false, "detect_orientation": false, "optimize_japanese": false, "remove_lines": false, "confidence_threshold": 70, "use_hybrid_approach": true, "contrast_enhancement": true, "denoise_level": 2, "edge_enhancement": true, "word_segmentation": true, "tesseract_whitelist": null, "use_language_dictionary": true}
+2025-04-19 16:04:19,979 - app - INFO - Tesseract OCRエンジンを使用します
+2025-04-19 16:04:19,979 - app - INFO - OCR処理を開始します
+2025-04-19 16:04:19,979 - app - INFO - ハイブリッドOCR処理を使用します
+2025-04-19 16:04:19,979 - registry_ocr - INFO - ハイブリッドOCR処理開始: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF
+2025-04-19 16:04:19,979 - registry_ocr - INFO - 標準OCR処理を実行中...
+2025-04-19 16:04:19,979 - registry_ocr - INFO - 画像処理開始: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF
+2025-04-19 16:04:20,127 - registry_ocr - ERROR - 画像読み込みエラー: cannot identify image file '/Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF'
+2025-04-19 16:04:20,127 - registry_ocr - INFO - 標準OCR処理完了: 信頼度 0.00
+2025-04-19 16:04:20,127 - registry_ocr - INFO - 日本語特化OCR処理を実行中...
+2025-04-19 16:04:20,127 - registry_ocr - INFO - 画像処理開始: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF
+2025-04-19 16:04:20,127 - registry_ocr - ERROR - 画像読み込みエラー: cannot identify image file '/Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF'
+2025-04-19 16:04:20,127 - registry_ocr - INFO - 日本語特化OCR処理完了: 信頼度 0.00
+2025-04-19 16:04:20,127 - registry_ocr - INFO - 高精度OCR処理を実行中...
+2025-04-19 16:04:20,127 - registry_ocr - INFO - 画像処理開始: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF
+2025-04-19 16:04:20,128 - ocr_implementation - INFO - 画像前処理を開始: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF
+2025-04-19 16:04:20,128 - ocr_implementation - ERROR - 画像の読み込みに失敗しました: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF
+2025-04-19 16:04:20,128 - registry_ocr - INFO - 強化前処理を適用しました: /Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF
+2025-04-19 16:04:20,128 - registry_ocr - ERROR - 画像読み込みエラー: cannot identify image file '/Users/apple/Desktop/業務効率化/登記簿OCR/uploads/3289-12025041701261723_2.PDF'
+2025-04-19 16:04:20,128 - registry_ocr - INFO - 高精度OCR処理完了: 信頼度 0.00
+2025-04-19 16:04:20,128 - registry_ocr - WARNING - 有効なOCR結果が見つかりませんでした
+2025-04-19 16:04:20,128 - app - INFO - OCR処理が完了しました。信頼度: 0.0
+2025-04-19 16:04:20,135 - RegistryOCRDB - INFO - OCR result saved to database with ID: 11
+2025-04-19 16:04:20,136 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 16:04:20] "[32mPOST /scan HTTP/1.1[0m" 302 -
+2025-04-19 16:04:20,156 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 16:04:20] "GET /result/cf0dcf0e-526a-47f4-ac83-481648211f02.json HTTP/1.1" 200 -
+2025-04-19 16:04:20,194 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 16:04:20] "[36mGET /debug_image/preprocessed HTTP/1.1[0m" 304 -
+2025-04-19 16:04:20,203 - werkzeug - INFO - 127.0.0.1 - - [19/Apr/2025 16:04:20] "GET /original_image/3289-12025041701261723_2.PDF HTTP/1.1" 200 -
+2025-04-19 16:05:56,719 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 16:05:56,721 - werkzeug - INFO -  * Detected change in '/Users/apple/Desktop/業務効率化/登記簿OCR/ocr_implementation.py', reloading
+2025-04-19 16:05:57,039 - werkzeug - INFO -  * Restarting with stat
+2025-04-19 16:05:57,039 - werkzeug - INFO -  * Restarting with stat

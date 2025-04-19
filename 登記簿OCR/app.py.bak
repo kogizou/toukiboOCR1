@@ -18,9 +18,6 @@ import sqlite3
 import io
 import csv
 from openpyxl.utils import get_column_letter
-import traceback
-import uuid
-import base64
 
 # OCR実装モジュールをインポート
 from ocr_implementation import RegistryOCR, logger as ocr_logger
@@ -76,15 +73,7 @@ ocr_config = {
     'detect_orientation': True,     # 自動方向検出
     'optimize_japanese': True,      # 日本語最適化
     'remove_lines': True,           # 線の除去
-    'confidence_threshold': 70,     # 信頼度閾値
-    # 新しい精度向上オプション
-    'use_hybrid_approach': True,    # 複合OCRアプローチ
-    'contrast_enhancement': True,   # コントラスト強化
-    'denoise_level': 2,             # ノイズ除去レベル（0-3）
-    'edge_enhancement': True,       # エッジ強調
-    'word_segmentation': True,      # 単語セグメンテーション強化
-    'tesseract_whitelist': None,    # 認識する文字のホワイトリスト
-    'use_language_dictionary': True # 日本語辞書を使用
+    'confidence_threshold': 70      # 信頼度閾値
 }
 
 # Tesseract OCRエンジンの初期化
@@ -152,8 +141,8 @@ def dashboard():
         for file in files[:5]:
             file_path = os.path.join(app.config['OUTPUT_FOLDER'], file)
             try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
                     recent_files.append({
                         'filename': data.get('file_name', 'Unknown'),
                         'processed_at': data.get('processed_at', ''),
@@ -177,202 +166,127 @@ def dashboard():
     
     return render_template('dashboard.html', recent_files=recent_files, stats=stats)
 
-# Base64エンコードされた画像からファイルを保存する関数
-def save_base64_image(base64_data, upload_folder):
-    try:
-        # Base64形式からヘッダー部分を削除
-        if ',' in base64_data:
-            base64_data = base64_data.split(',')[1]
-        
-        # Base64文字列をデコードしてバイト列に変換
-        decoded_data = base64.b64decode(base64_data)
-        
-        # 一意のファイル名を生成
-        filename = f"camera_capture_{str(uuid.uuid4())[:8]}.jpg"
-        file_path = os.path.join(upload_folder, filename)
-        
-        # ファイルに書き込み
-        with open(file_path, 'wb') as f:
-            f.write(decoded_data)
-        
-        return filename, file_path
-    except Exception as e:
-        logger.error(f"Base64画像の保存エラー: {str(e)}")
-        raise
-
-# カメラキャプチャAPI
-@app.route('/api/capture', methods=['POST'])
-@login_required
-def camera_capture():
-    try:
-        data = request.get_json()
-        if not data or 'image_data' not in data:
-            return jsonify({'error': '画像データが見つかりません'}), 400
-        
-        # Base64画像をファイルに保存
-        base64_data = data['image_data']
-        filename, file_path = save_base64_image(base64_data, app.config['UPLOAD_FOLDER'])
-        
-        return jsonify({
-            'success': True, 
-            'filename': filename,
-            'file_path': file_path
-        })
-    except Exception as e:
-        logger.error(f"カメラキャプチャエラー: {str(e)}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
-
 # スキャン・OCR画面
 @app.route('/scan', methods=['GET', 'POST'])
 @login_required
 def scan():
     if request.method == 'POST':
-        try:
-            # ファイルが選択されているか確認
-            if 'file' not in request.files and 'image_data' not in request.form:
-                flash('ファイルが選択されていません', 'error')
-                return redirect(request.url)
-            
-            # 通常のファイルアップロードからの処理
-            if 'file' in request.files:
-                file = request.files['file']
-                
-                if file.filename == '':
-                    flash('ファイルが選択されていません', 'error')
-                    return redirect(request.url)
-                
-                if file and allowed_file(file.filename):
-                    # ファイルを安全に保存
-                    filename = secure_filename(file.filename)
-                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                    file.save(file_path)
-                    
-                    app.logger.info(f"アップロードされたファイル: {filename}, パス: {file_path}")
-                else:
-                    flash('許可されていないファイル形式です', 'error')
-                    return redirect(request.url)
-            
-            # Base64画像データからの処理
-            elif 'image_data' in request.form:
-                base64_data = request.form['image_data']
+        # OCR設定の取得
+        ocr_settings = {
+            'dpi': int(request.form.get('dpi', 300)),
+            'psm': int(request.form.get('psm', 6)),
+            'oem': int(request.form.get('oem', 3)),
+            # 追加の精度向上オプション
+            'enhance_preprocessing': 'enhance_preprocessing' in request.form,
+            'detect_orientation': 'detect_orientation' in request.form,
+            'optimize_japanese': 'optimize_japanese' in request.form,
+            'remove_lines': 'remove_lines' in request.form,
+            # OpenAI設定
+            'use_openai': 'use_openai' in request.form,
+            'api_key': request.form.get('api_key', '')
+        }
+        
+        # Tesseract OCRエンジンの設定を更新
+        ocr_engine.config.update(ocr_settings)
+        
+        # OpenAI OCRエンジンの設定を更新（利用可能かつ使用する場合）
+        use_openai = ocr_settings.get('use_openai', False)
+        api_key = ocr_settings.get('api_key', '')
+        
+        # APIキーが指定された場合、環境変数にセット
+        if api_key:
+            os.environ['OPENAI_API_KEY'] = api_key
+        
+        # OpenAI OCRエンジンの初期化（まだ初期化されていない場合）
+        global openai_ocr_engine
+        if use_openai and OPENAI_OCR_AVAILABLE:
+            if not openai_ocr_engine or ocr_settings.get('api_key'):
                 try:
-                    filename, file_path = save_base64_image(base64_data, app.config['UPLOAD_FOLDER'])
-                    app.logger.info(f"Base64画像を保存しました: {filename}, パス: {file_path}")
+                    openai_config = ocr_engine.config.copy()
+                    openai_config.update({
+                        'api_key': api_key or os.environ.get('OPENAI_API_KEY', ''),
+                        'model': 'gpt-4-vision-preview',
+                        'temperature': 0.3,
+                        'max_tokens': 4000,
+                        'detail_level': 'high'
+                    })
+                    openai_ocr_engine = OpenAIOCR(openai_config)
+                    logger.info("OpenAI OCR engine re-initialized with new settings")
                 except Exception as e:
-                    flash(f'画像データの処理中にエラーが発生しました: {str(e)}', 'error')
+                    logger.error(f"Failed to initialize OpenAI OCR engine: {str(e)}")
+                    openai_ocr_engine = None
+                    flash('OpenAI OCRエンジンの初期化に失敗しました。APIキーを確認してください。')
                     return redirect(request.url)
-                
-            # OCRエンジンのインスタンスを取得
-            ocr_engine = None
-            use_openai = request.form.get('use_openai') == 'on'
+        
+        # ファイルがリクエストに含まれているか確認
+        if 'file' not in request.files:
+            flash('ファイルが選択されていません')
+            return redirect(request.url)
+        
+        file = request.files['file']
+        
+        # ファイル名が空でないか確認
+        if file.filename == '':
+            flash('ファイルが選択されていません')
+            return redirect(request.url)
+        
+        # 有効なファイルか確認してアップロード
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
             
-            # OpenAIを使用する場合
-            if use_openai and OPENAI_OCR_AVAILABLE:
-                api_key = request.form.get('api_key', '')
-                if not api_key and not os.environ.get('OPENAI_API_KEY'):
-                    flash('OpenAI APIキーが設定されていません', 'error')
-                    return redirect(request.url)
-                
-                # OpenAI OCRエンジンの設定を更新
-                openai_config = ocr_config.copy()
-                openai_config.update({
-                    'api_key': api_key,
-                    'model': 'gpt-4-vision-preview',
-                    'temperature': 0.3,
-                    'max_tokens': 4000,
-                    'detail_level': 'high'
-                })
-                ocr_engine = OpenAIOCR(openai_config)
-                app.logger.info("OpenAI OCRエンジンを使用します")
-            else:
-                # Tesseract OCRエンジンを使用
-                # OCR設定の取得
-                updated_config = ocr_config.copy()
-                
-                # フォームから送信された設定値を取得
-                if 'dpi' in request.form:
-                    updated_config['dpi'] = int(request.form.get('dpi'))
-                if 'psm' in request.form:
-                    updated_config['psm'] = int(request.form.get('psm'))
-                if 'oem' in request.form:
-                    updated_config['oem'] = int(request.form.get('oem'))
-                
-                # 精度向上オプション
-                updated_config['enhance_preprocessing'] = request.form.get('enhance_preprocessing') == 'on'
-                updated_config['detect_orientation'] = request.form.get('detect_orientation') == 'on'
-                updated_config['optimize_japanese'] = request.form.get('optimize_japanese') == 'on'
-                updated_config['remove_lines'] = request.form.get('remove_lines') == 'on'
-                
-                ocr_engine = RegistryOCR(updated_config)
-                app.logger.info("Tesseract OCRエンジンを使用します")
-            
-            # OCR処理の実行
             try:
-                app.logger.info("OCR処理を開始します")
+                logger.info("Starting OCR process for file: %s", filename)
                 
-                # ハイブリッドOCRの使用判定
-                use_hybrid_ocr = ocr_config.get('use_hybrid_approach', False)
-                
-                if use_hybrid_ocr:
-                    # 複合OCRアプローチを使用
-                    app.logger.info("ハイブリッドOCR処理を使用します")
-                    structured_data, confidence, ocr_text = ocr_engine.hybrid_ocr(file_path)
+                # OCR処理の実行（OpenAIまたはTesseract）
+                if use_openai and openai_ocr_engine:
+                    logger.info("Using OpenAI OCR engine")
+                    result = openai_ocr_engine.process_image(file_path)
+                    output_path = openai_ocr_engine.save_result(result)
                 else:
-                    # 標準OCR処理を使用
-                    app.logger.info("標準OCR処理を使用します")
-                    structured_data, confidence, ocr_text = ocr_engine.process_image(file_path)
+                    logger.info("Using Tesseract OCR engine")
+                result = ocr_engine.process_image(file_path)
+                output_path = ocr_engine.save_result(result)
                 
-                app.logger.info(f"OCR処理が完了しました。信頼度: {confidence}")
-                
-                # 処理結果を保存
-                data_id = str(uuid.uuid4())
-                result_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{data_id}.json")
-                
-                # 結果データの作成
-                result_data = {
-                    'id': data_id,
-                    'file_name': filename,
-                    'processed_at': datetime.now().isoformat(),
-                    'structured_data': structured_data,
-                    'confidence': confidence,
-                    'text': ocr_text
-                }
-                
-                # 結果をJSONファイルに保存
-                with open(result_path, 'w', encoding='utf-8') as f:
-                    json.dump(result_data, f, ensure_ascii=False, indent=2)
-                
-                # データベースに保存
-                db.save_ocr_result(result_data)
-            
-                # 結果のフィードバック
-                if confidence > 0.7:
-                    flash(f'OCR処理が完了しました。信頼度: {confidence:.2f}', 'success')
-                elif confidence > 0.4:
-                    flash(f'OCR処理が完了しましたが、信頼度が低い可能性があります: {confidence:.2f}', 'warning')
-                else:
-                    flash(f'OCR処理は完了しましたが、結果が不正確な可能性が高いです: {confidence:.2f}', 'error')
+                # データベースに結果を保存
+                db.save_ocr_result(result)
+                logger.info("OCR result saved to database")
                 
                 # 処理結果ページにリダイレクト
-                return redirect(url_for('result', filename=f"{data_id}.json"))
-                
+                result_filename = os.path.basename(output_path)
+                logger.info("OCR process completed. Result saved to: %s", result_filename)
+                return redirect(url_for('result', filename=result_filename))
+            
             except Exception as e:
-                flash(f'OCR処理中にエラーが発生しました: {str(e)}', 'error')
-                import traceback
-                app.logger.error(traceback.format_exc())
-        
-        except Exception as e:
-            flash(f'エラーが発生しました: {str(e)}', 'error')
-            import traceback
-            app.logger.error(traceback.format_exc())
+                logger.error("OCR process failed: %s", str(e), exc_info=True)
+                flash(f'OCR処理中にエラーが発生しました: {str(e)}')
+                return redirect(request.url)
+        else:
+            flash('許可されていないファイル形式です')
+            return redirect(request.url)
     
-    # OpenAI APIの利用可否状況
-    openai_status = {
-        'available': OPENAI_OCR_AVAILABLE,
-        'has_api_key': bool(os.environ.get('OPENAI_API_KEY', ''))
+    # OCR設定を表示
+    ocr_settings = {
+        'dpi': ocr_engine.config.get('dpi', 300),
+        'psm': ocr_engine.config.get('psm', 6),
+        'oem': ocr_engine.config.get('oem', 3),
+        'enhance_preprocessing': ocr_engine.config.get('enhance_preprocessing', True),
+        'detect_orientation': ocr_engine.config.get('detect_orientation', True),
+        'optimize_japanese': ocr_engine.config.get('optimize_japanese', True),
+        'remove_lines': ocr_engine.config.get('remove_lines', True),
+        'use_openai': False,  # デフォルトはOFF
+        'api_key': os.environ.get('OPENAI_API_KEY', '')
     }
     
-    return render_template('scan.html', ocr_settings=ocr_config, openai_status=openai_status)
+    # OpenAI OCRの利用可否情報を追加
+    openai_status = {
+        'available': OPENAI_OCR_AVAILABLE,
+        'initialized': openai_ocr_engine is not None,
+        'has_api_key': bool(os.environ.get('OPENAI_API_KEY'))
+    }
+    
+    return render_template('scan.html', ocr_settings=ocr_settings, openai_status=openai_status)
 
 # 処理結果表示画面
 @app.route('/result/<filename>')
@@ -795,9 +709,9 @@ def generate_report():
             for file in files:
                 file_path = os.path.join(app.config['OUTPUT_DIR'], file)
                 try:
-                        with open(file_path, 'r', encoding='utf-8') as f:
-                            data = json.load(f)
-                            all_data.append(data)
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        all_data.append(data)
                 except Exception as e:
                     logger.error("Error reading file %s for report: %s", file, str(e))
         
@@ -1004,18 +918,7 @@ def settings():
                 'dpi': int(request.form.get('dpi', 300)),
                 'psm': int(request.form.get('psm', 6)),
                 'oem': int(request.form.get('oem', 3)),
-                'confidence_threshold': int(request.form.get('confidence_threshold', 70)),
-                # 精度向上オプション
-                'enhance_preprocessing': request.form.get('enhance_preprocessing') == 'on',
-                'detect_orientation': request.form.get('detect_orientation') == 'on',
-                'optimize_japanese': request.form.get('optimize_japanese') == 'on',
-                'remove_lines': request.form.get('remove_lines') == 'on',
-                'use_hybrid_approach': request.form.get('use_hybrid_approach') == 'on',
-                'contrast_enhancement': request.form.get('contrast_enhancement') == 'on',
-                'denoise_level': int(request.form.get('denoise_level', 2)),
-                'edge_enhancement': request.form.get('edge_enhancement') == 'on',
-                'word_segmentation': request.form.get('word_segmentation') == 'on',
-                'use_language_dictionary': request.form.get('use_language_dictionary') == 'on'
+                'confidence_threshold': int(request.form.get('confidence_threshold', 70))
             }
             
             # ユーザー設定の更新
@@ -1041,7 +944,6 @@ def settings():
             
             # OCRエンジンの設定を更新
             ocr_engine.config.update(ocr_settings)
-            ocr_config.update(ocr_settings)
             
             # アプリケーション設定を更新
             app.config['MAX_CONTENT_LENGTH'] = system_settings['max_upload_size'] * 1024 * 1024
@@ -1065,22 +967,9 @@ def settings():
         'psm': ocr_engine.config.get('psm', 6),
         'oem': ocr_engine.config.get('oem', 3),
         'confidence_threshold': ocr_engine.config.get('confidence_threshold', 70),
-        # 精度向上オプション
-        'enhance_preprocessing': ocr_engine.config.get('enhance_preprocessing', True),
-        'detect_orientation': ocr_engine.config.get('detect_orientation', True),
-        'optimize_japanese': ocr_engine.config.get('optimize_japanese', True),
-        'remove_lines': ocr_engine.config.get('remove_lines', True),
-        'use_hybrid_approach': ocr_engine.config.get('use_hybrid_approach', False),
-        'contrast_enhancement': ocr_engine.config.get('contrast_enhancement', True),
-        'denoise_level': ocr_engine.config.get('denoise_level', 2),
-        'edge_enhancement': ocr_engine.config.get('edge_enhancement', True),
-        'word_segmentation': ocr_engine.config.get('word_segmentation', True),
-        'use_language_dictionary': ocr_engine.config.get('use_language_dictionary', True),
-        # ユーザー設定
         'username': session.get('username', 'user'),
         'language': 'ja',
         'theme': session.get('theme', 'light'),
-        # システム設定
         'auto_backup': True,
         'backup_interval': 24,
         'max_upload_size': app.config['MAX_CONTENT_LENGTH'] // (1024 * 1024)
@@ -1165,9 +1054,9 @@ def chat_api():
             for file in files:
                 file_path = os.path.join(app.config['OUTPUT_DIR'], file)
                 try:
-                        with open(file_path, 'r', encoding='utf-8') as f:
-                            data = json.load(f)
-                            all_data.append(data)
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        all_data.append(data)
                 except Exception as e:
                     logger.error("Error reading file %s for chat: %s", file, str(e))
         
@@ -1389,7 +1278,7 @@ def diff_view(file1, file2):
                     }
             else:
                 # 一般的な値の比較
-                if value1 != value2:
+            if value1 != value2:
                     status = 'changed'
                     if value1 is None:
                         status = 'added'

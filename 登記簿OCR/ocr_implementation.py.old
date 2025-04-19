@@ -1,0 +1,2381 @@
+"""
+登記簿OCRアプリ - OCR機能実装
+
+このスクリプトは登記簿OCRアプリのコアとなるOCR機能を実装します。
+テッセラクトOCRエンジンを使用して、登記簿のスキャン画像からテキストを抽出し、
+構造化データに変換する機能を提供します。
+"""
+
+import os
+import sys
+import cv2
+import numpy as np
+import pytesseract
+from PIL import Image, ImageEnhance
+import pandas as pd
+import re
+import json
+import csv
+from datetime import datetime
+import logging
+# PDF対応のためのライブラリを追加
+import tempfile
+from pdf2image import convert_from_path  # PDF変換用の関数をインポート
+try:
+    import fitz  # PyMuPDF
+    PDF_SUPPORT = True
+except ImportError:
+    PDF_SUPPORT = False
+    logging.warning("PyMuPDF not installed. PDF support will be disabled.")
+
+# Tesseractインストール確認
+try:
+    # テスト実行
+    pytesseract.get_tesseract_version()
+    TESSERACT_AVAILABLE = True
+except Exception as e:
+    TESSERACT_AVAILABLE = False
+    logging.warning("Tesseract not available: {}. OCR functionality will be limited.".format(str(e)))
+
+# ロギングの設定
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("ocr_log.txt"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger('RegistryOCR')
+
+class RegistryOCR:
+    """登記簿OCR処理のメインクラス"""
+    
+    def __init__(self, config=None):
+        """
+        初期化メソッド
+        
+        Args:
+            config (dict, optional): 設定情報を含む辞書。デフォルトはNone。
+        """
+        # デフォルト設定
+        self.default_config = {
+            'lang': 'jpn',  # 日本語
+            'tesseract_cmd': 'tesseract',  # Tesseractコマンドのパス
+            'temp_dir': './temp',  # 一時ファイル保存ディレクトリ
+            'output_dir': './output',  # 出力ディレクトリ
+            'confidence_threshold': 70,  # 信頼度閾値（%）
+            'dpi': 300,  # DPI設定
+            'psm': 6,  # ページセグメンテーションモード
+            'oem': 3,  # OCRエンジンモード
+        }
+        
+        # 設定の初期化
+        self.config = self.default_config.copy()
+        if config:
+            self.config.update(config)
+        
+        # Tesseractのパス設定
+        # Mac環境でのTesseractパスの可能性
+        mac_tesseract_paths = [
+            '/usr/local/bin/tesseract',
+            '/opt/homebrew/bin/tesseract',
+            '/usr/bin/tesseract',
+            # ユーザーインストールパス
+            os.path.expanduser('~/bin/tesseract'),
+            # アプリケーションパス
+            '/Applications/Tesseract.app/Contents/MacOS/tesseract'
+        ]
+        
+        # 環境に応じたパス設定
+        if os.name == 'nt':  # Windows
+            pytesseract.pytesseract.tesseract_cmd = self.config['tesseract_cmd']
+        elif os.name == 'posix':  # MacやLinux
+            # 既存のパスが有効かチェック
+            if os.path.isfile(self.config['tesseract_cmd']) and os.access(self.config['tesseract_cmd'], os.X_OK):
+                pytesseract.pytesseract.tesseract_cmd = self.config['tesseract_cmd']
+            else:
+                # Mac環境での可能性のあるパスをチェック
+                for path in mac_tesseract_paths:
+                    if os.path.isfile(path) and os.access(path, os.X_OK):
+                        pytesseract.pytesseract.tesseract_cmd = path
+                        self.config['tesseract_cmd'] = path
+                        logging.info("Found Tesseract at: {}".format(path))
+                        break
+        
+        # 一時ディレクトリと出力ディレクトリの作成
+        os.makedirs(self.config['temp_dir'], exist_ok=True)
+        os.makedirs(self.config['output_dir'], exist_ok=True)
+        
+        # 登記簿の構造定義（正規表現パターン）
+        self.patterns = {
+            'property_number': r'不動産番号[：:]\s*(\d{4}[-－]\d{4}[-－]\d{4})',
+            'address': r'所\s*在\s*(.+[都道府県].+[市区町村].+)',
+            'lot_number': r'地\s*番\s*(.+)',
+            'area': r'地\s*積\s*([0-9０-９,.，．]+)\s*([平方メートル㎡])',
+            'owner_name': r'名\s*義\s*人\s*(.+)',
+            'owner_address': r'住\s*所\s*(.+)',
+            'rights': r'権\s*利\s*者\s*(.+)'
+        }
+        
+        logger.info("RegistryOCR initialized with config: %s", self.config)
+    
+    def _preprocess_image(self, image):
+        """
+        OCR前の画像前処理を行う
+        
+        Args:
+            image (PIL.Image): 処理対象の画像
+            
+        Returns:
+            PIL.Image: 前処理後の画像
+            dict: 前処理パラメータ情報
+        """
+        # 前処理パラメータの記録
+        preprocess_params = {
+            "original_size": image.size,
+            "dpi": self.config.get("dpi", 300),
+            "enhancements": []
+        }
+        
+        # サイズが小さすぎる場合はリサイズ
+        if image.width < 1000 or image.height < 1000:
+            scale_factor = max(1000 / image.width, 1000 / image.height)
+            new_width = int(image.width * scale_factor)
+            new_height = int(image.height * scale_factor)
+            image = image.resize((new_width, new_height), Image.LANCZOS)
+            preprocess_params["enhancements"].append(f"resized_to_{new_width}x{new_height}")
+        
+        # グレースケール変換（カラー画像の場合）
+        if image.mode != 'L':
+            image = image.convert('L')
+            preprocess_params["enhancements"].append("grayscale_conversion")
+        
+        # コントラスト強調
+        enhancer = ImageEnhance.Contrast(image)
+        image = enhancer.enhance(2.0)  # コントラスト強化
+        preprocess_params["enhancements"].append("contrast_enhancement_2.0")
+        
+        # 二値化 - 適応的しきい値処理
+        # NumPy配列に変換
+        img_array = np.array(image)
+        
+        # ガウシアンブラーによる背景推定
+        blurred = cv2.GaussianBlur(img_array, (65, 65), 0)
+        
+        # 適応的二値化（背景からの差分で二値化）
+        binary = cv2.adaptiveThreshold(
+            img_array, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+            cv2.THRESH_BINARY, 15, 7
+        )
+        
+        # ノイズ除去（小さな点を除去）
+        kernel = np.ones((2, 2), np.uint8)
+        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
+        
+        # PILイメージに戻す
+        image = Image.fromarray(binary)
+        preprocess_params["enhancements"].append("adaptive_thresholding")
+        preprocess_params["enhancements"].append("noise_removal")
+        
+        # 回転補正（傾きの検出と補正）- 日本語の縦書きに配慮
+        # 縦向きと横向きの両方で試行して、OCR結果が良い方を採用
+        try:
+            # OpenCVで傾き検出
+            img_array = np.array(image)
+            edges = cv2.Canny(img_array, 50, 150, apertureSize=3)
+            lines = cv2.HoughLinesP(
+                edges, 1, np.pi/180, 
+                threshold=100, minLineLength=100, maxLineGap=10
+            )
+            
+            if lines is not None and len(lines) > 0:
+                angles = []
+                for line in lines:
+                    x1, y1, x2, y2 = line[0]
+                    # 水平に近い線のみを対象
+                    if abs(y2 - y1) < abs(x2 - x1):
+                        angle = np.arctan2(y2 - y1, x2 - x1) * 180.0 / np.pi
+                        angles.append(angle)
+                
+                if angles:
+                    # 中央値を取る（外れ値に強い）
+                    median_angle = np.median(angles)
+                    
+                    # 回転補正（±10度以内のみ補正）
+                    if abs(median_angle) <= 10:
+                        # PIL画像に戻して回転
+                        image = image.rotate(-median_angle, expand=True, fillcolor=255)
+                        preprocess_params["enhancements"].append(f"rotation_corrected_{median_angle:.2f}_degrees")
+        except Exception as e:
+            logger.warning(f"Rotation correction failed: {str(e)}")
+        
+        # 縦書きテキスト検出と対応
+        # 縦書きテキスト用の画像も生成して、OCR時に両方を試す
+        vertical_image = image.rotate(90, expand=True)
+        preprocess_params["vertical_text_detected"] = True
+        preprocess_params["enhancements"].append("vertical_text_processing")
+        
+        # 余白の調整（トリミング）
+        # バウンディングボックスを検出して余分な余白を削除
+        img_array = np.array(image)
+        if img_array.ndim == 2:
+            # グレースケールの場合
+            mask = img_array < 200  # 200未満のピクセルをテキスト領域とみなす
+        else:
+            # カラーの場合
+            mask = np.mean(img_array, axis=2) < 200
+        
+        # マスクから境界を見つける
+        coords = np.column_stack(np.where(mask))
+        if len(coords) > 0:
+            y_min, x_min = coords.min(axis=0)
+            y_max, x_max = coords.max(axis=0)
+            
+            # 余白を追加（10ピクセル）
+            x_min = max(0, x_min - 10)
+            y_min = max(0, y_min - 10)
+            x_max = min(image.width, x_max + 10)
+            y_max = min(image.height, y_max + 10)
+            
+            # トリミング
+            if x_min < x_max and y_min < y_max:
+                image = image.crop((x_min, y_min, x_max, y_max))
+                vertical_image = vertical_image.crop((y_min, image.width - x_max, y_max, image.width - x_min))
+                preprocess_params["enhancements"].append(f"trimmed_to_{x_min}_{y_min}_{x_max}_{y_max}")
+        
+        # DPI設定の調整（必要に応じて）
+        if hasattr(image, 'info') and 'dpi' not in image.info:
+            # DPI情報を設定
+            dpi = self.config.get("dpi", 300)
+            image.info['dpi'] = (dpi, dpi)
+            vertical_image.info['dpi'] = (dpi, dpi)
+            preprocess_params["dpi_set"] = dpi
+        
+        return image, vertical_image, preprocess_params
+    
+    def preprocess_image(self, image_path):
+        """
+        OCR処理のための画像前処理を行う
+        
+        Args:
+            image_path (str): 処理する画像ファイルのパス
+            
+        Returns:
+            numpy.ndarray: 前処理済みの画像
+            str: 検出された向き（'horizontal'または'vertical'）
+        """
+        logger.info("画像の前処理を開始: %s", image_path)
+        
+        # 画像またはPDFを読み込む
+        if image_path.lower().endswith('.pdf'):
+            # PDFの場合、最初のページを画像に変換
+            try:
+                images = convert_from_path(image_path, dpi=600)  # DPIを増加
+                if not images:
+                    raise ValueError("PDFからの画像変換に失敗しました")
+                image = np.array(images[0])
+                logger.info("PDF converted to image: %s", image_path)
+                
+                # 変換された画像を一時ファイルに保存（デバッグ用）
+                temp_dir = tempfile.mkdtemp(dir=self.config['temp_dir'])
+                temp_image_path = os.path.join(temp_dir, "pdf_page_1.png")
+                images[0].save(temp_image_path)
+                logger.info("PDF converted to image: %s", temp_image_path)
+                
+                # PDFから変換した場合は元の画像を返す
+                image_path = temp_image_path
+            except Exception as e:
+                logger.error("PDF変換エラー: %s", str(e))
+                raise
+        
+        # 通常の画像ファイルの場合は直接読み込み
+        image = cv2.imread(image_path)
+        if image is None:
+            logger.error("画像の読み込みに失敗: %s", image_path)
+            raise ValueError("画像の読み込みに失敗: {}".format(image_path))
+        
+        # 元のサイズを保存
+        original_height, original_width = image.shape[:2]
+        logger.info("元の画像サイズ: %dx%d", original_width, original_height)
+        
+        # 画像が大きすぎる場合はリサイズ（処理速度向上のため）
+        max_dimension = 3000
+        if original_height > max_dimension or original_width > max_dimension:
+            scale_factor = min(max_dimension / original_height, max_dimension / original_width)
+            new_height, new_width = int(original_height * scale_factor), int(original_width * scale_factor)
+            image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
+            logger.info("画像をリサイズしました: %dx%d (scale factor: %.6f)", new_width, new_height, scale_factor)
+        
+        # グレースケールに変換
+        if len(image.shape) == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image
+        
+        # 元の解像度が低い場合はリサイズして拡大
+        h, w = gray.shape
+        if h < 1500 or w < 1500:
+            scale_factor = max(1500 / h, 1500 / w)
+            new_h, new_w = int(h * scale_factor), int(w * scale_factor)
+            gray = cv2.resize(gray, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
+            logger.info("低解像度画像を拡大: %dx%d", new_w, new_h)
+
+        # バイラテラルフィルタでノイズを除去しながらエッジを保持
+        denoised = cv2.bilateralFilter(gray, 9, 75, 75)
+        
+        # CLAHEを使用してコントラスト強調
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        enhanced = clahe.apply(denoised)
+        
+        # アンシャープマスクを適用してシャープネスを向上
+        gaussian = cv2.GaussianBlur(enhanced, (0, 0), 3.0)
+        sharpened = cv2.addWeighted(enhanced, 1.5, gaussian, -0.5, 0)
+        
+        # 適応的二値化（局所的な領域ごとに最適な閾値を使用）
+        binary = cv2.adaptiveThreshold(
+            sharpened, 
+            255, 
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+            cv2.THRESH_BINARY, 
+            15,  # ブロックサイズ
+            8    # 引く定数
+        )
+        
+        # 登記簿特有の線除去処理（垂直・水平線を検出して消去）
+        if self.config.get('remove_lines', True):
+            # 水平線検出
+            horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (40, 1))
+            horizontal_lines = cv2.morphologyEx(binary, cv2.MORPH_OPEN, horizontal_kernel, iterations=2)
+            
+            # 垂直線検出
+            vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 40))
+            vertical_lines = cv2.morphologyEx(binary, cv2.MORPH_OPEN, vertical_kernel, iterations=2)
+            
+            # 検出した線を元の画像から除去
+            lines = cv2.add(horizontal_lines, vertical_lines)
+            binary = cv2.subtract(binary, lines)
+        
+        # モルフォロジー処理（小さなノイズを除去、文字をつなげる）
+        kernel = np.ones((2, 2), np.uint8)
+        binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+        
+        # 反転（Tesseractは白背景に黒文字を期待）
+        binary = cv2.bitwise_not(binary)
+        
+        # デバッグ用に前処理後の画像を保存
+        debug_image_path = os.path.join(self.config['temp_dir'], 'debug_preprocess.png')
+        cv2.imwrite(debug_image_path, binary)
+        logger.info("Preprocessed image saved to: %s", debug_image_path)
+        
+        # テキストの向きを検出（縦書きか横書きか）
+        orientation = self._detect_text_orientation(binary)
+        logger.info("検出されたテキスト向き: %s", orientation)
+        
+        # 前処理済みの画像を返す
+        return binary, orientation
+        
+    def _detect_text_orientation(self, binary_image):
+        """
+        テキストが縦書きか横書きかを検出する
+        
+        Args:
+            binary_image (numpy.ndarray): 二値化された画像
+            
+        Returns:
+            str: 'horizontal' または 'vertical'
+        """
+        # 縦横の射影ヒストグラムを計算
+        h, w = binary_image.shape
+        
+        # 水平方向の射影（各行のピクセル合計）
+        horizontal_proj = np.sum(binary_image, axis=1) / 255
+        
+        # 垂直方向の射影（各列のピクセル合計）
+        vertical_proj = np.sum(binary_image, axis=0) / 255
+        
+        # 変動係数を計算 (標準偏差/平均)
+        h_mean = np.mean(horizontal_proj)
+        h_std = np.std(horizontal_proj)
+        h_cv = h_std / h_mean if h_mean > 0 else 0
+        
+        v_mean = np.mean(vertical_proj)
+        v_std = np.std(vertical_proj)
+        v_cv = v_std / v_mean if v_mean > 0 else 0
+        
+        # 水平方向の変動が大きい場合は横書き、垂直方向の変動が大きい場合は縦書き
+        horizontal_confidence = h_cv * 100
+        vertical_confidence = v_cv * 100
+        
+        logger.info("水平方向の信頼度: %.1f%%, 垂直方向の信頼度: %.1f%%", 
+                    horizontal_confidence, vertical_confidence)
+        
+        if horizontal_confidence > vertical_confidence:
+            return 'horizontal'
+        else:
+            return 'vertical'
+            
+    def extract_text(self, image_path, orientation='horizontal'):
+        """
+        画像からテキストを抽出する
+        
+        Args:
+            image_path (str): 画像ファイルのパス
+            orientation (str): テキストの向き。'horizontal'または'vertical'
+            
+        Returns:
+            str: 抽出されたテキスト
+            float: OCRの信頼度（%）
+        """
+        logger.info("テキスト抽出を開始: %s", image_path)
+        
+        # 画像の前処理
+        processed_image, detected_orientation = self.preprocess_image(image_path)
+        
+        # 方向が指定されていない場合は検出した方向を使用
+        if orientation is None:
+            orientation = detected_orientation
+        
+        # 最適なPSM（ページセグメンテーションモード）の組み合わせ
+        if orientation == 'vertical':
+            # 縦書きテキスト向けのPSM設定
+            psm_options = [5, 6, 12, 11, 4]  # 5: 縦書き単一ブロック、6: 単一ブロック、その他も試す
+        else:
+            # 横書きテキスト向けのPSM設定
+            psm_options = [6, 3, 4, 11, 1]  # 6: 単一ブロック、3: 自動、4: 単一列
+        
+        # OCRエンジンモード設定
+        oem_options = [1, 3, 2, 0]  # 1: LSTMのみ、3: LSTM+レガシー、2: レガシーのみ、0: レガシー＋キューブ
+        
+        # 各言語モデルを試す
+        lang_options = ['jpn', 'jpn+jpn_vert', 'jpn+jpn_vert+eng']
+        
+        best_text = ""
+        best_confidence = 0
+        best_config = ""
+        best_lang = ""
+        
+        # 登記簿特有の辞書（頻出用語）
+        registry_terms = ['不動産番号', '所在', '地番', '地積', '所有者', '住所', '権利部', '甲区', '乙区', '順位', '登記の目的', '原因', '権利者', '義務者', '抵当権', '根抵当権']
+        
+        # 複数の言語で試行
+        for lang in lang_options:
+            # 各パラメータ組み合わせを試す
+            for psm in psm_options:
+                for oem in oem_options:
+                    # Tesseract設定構築
+                    config = f'--psm {psm} --oem {oem} -l {lang}'
+                    
+                    # 特殊なOCR設定
+                    if orientation == 'vertical':
+                        # 縦書きテキスト用の設定
+                        config += ' -c textord_old_baselines=0'
+                        config += ' -c textord_fix_xheight=0'
+                        config += ' -c textord_heavy_nr=1'
+                    
+                    # 登記簿特有の用語を単語リストとして追加
+                    terms_file = os.path.join(self.config['temp_dir'], 'registry_terms.txt')
+                    try:
+                        with open(terms_file, 'w', encoding='utf-8') as f:
+                            f.write('\n'.join(registry_terms))
+                        config += f' --user-words {terms_file}'
+                    except Exception as e:
+                        logger.warning(f"用語リスト作成エラー: {str(e)}")
+                    
+                    # 文字間隔と単語間隔の設定
+                    config += ' -c preserve_interword_spaces=1'
+                    config += ' -c tessedit_char_blacklist=|~`'
+                    
+                    # 高精度モード
+                    if self.config.get('high_quality', True):
+                        config += ' --tessdata-dir /opt/homebrew/share/tessdata'
+                        
+                    try:
+                        # Tesseractを使用してテキスト抽出
+                        temp_img = Image.fromarray(processed_image)
+                        
+                        # テキスト抽出実行
+                        text = pytesseract.image_to_string(temp_img, config=config)
+                        
+                        # 空のテキストは無視
+                        if not text.strip():
+                            continue
+                        
+                        # 信頼度データの取得
+                        data = pytesseract.image_to_data(temp_img, config=config, output_type=pytesseract.Output.DICT)
+                        confidences = [float(conf) for conf in data['conf'] if conf != '-1']
+                        
+                        # 信頼度が低すぎる場合はスキップ
+                        if not confidences:
+                            continue
+                            
+                        current_confidence = sum(confidences) / len(confidences)
+                        
+                        # キーワード検出による信頼度調整
+                        # 登記簿に特有のキーワードが見つかった場合、信頼度を増加
+                        keyword_bonus = 0
+                        for term in registry_terms:
+                            if term in text:
+                                keyword_bonus += 3  # キーワードごとに3%加算
+                        
+                        adjusted_confidence = current_confidence + keyword_bonus
+                        logger.info(f"設定: '{config}' (言語: {lang}) の信頼度: {current_confidence:.1f}% (調整後: {adjusted_confidence:.1f}%)")
+                        
+                        # より信頼度の高い結果を保持
+                        if adjusted_confidence > best_confidence:
+                            best_text = text
+                            best_confidence = adjusted_confidence
+                            best_config = config
+                            best_lang = lang
+                    
+                    except Exception as e:
+                        logger.error(f"テキスト抽出エラー: {str(e)}")
+                        continue
+        
+        # テキスト後処理
+        if best_text:
+            best_text = self._post_process_text(best_text)
+            logger.info(f"テキスト抽出完了: 信頼度 {best_confidence:.1f}%, 言語: {best_lang}, 設定: {best_config}")
+        else:
+            logger.warning("テキスト抽出に失敗、有効な結果がありません")
+            best_confidence = 0
+        
+        return best_text, best_confidence
+        
+    def _post_process_text(self, text):
+        """
+        抽出されたテキストの後処理を行う
+        
+        Args:
+            text (str): 抽出されたテキスト
+            
+        Returns:
+            str: 後処理されたテキスト
+        """
+        if not text:
+            return ""
+        
+        # 改行と空白の正規化
+        lines = text.splitlines()
+        lines = [line.strip() for line in lines]
+        
+        # 空行の削除
+        lines = [line for line in lines if line]
+        
+        # 各行のテキストを正規化
+        normalized_lines = []
+        for line in lines:
+            # 全角スペースを半角に変換
+            line = line.replace('　', ' ')
+            # 連続した空白を1つに
+            line = re.sub(r'\s+', ' ', line)
+            # 括弧の正規化
+            line = line.replace('（', '(').replace('）', ')')
+            # 数字の正規化（全角→半角）
+            line = line.translate(str.maketrans('０１２３４５６７８９', '0123456789'))
+            
+            # 登記簿特有の文言の正規化
+            corrections = {
+                # 不動産番号の修正パターン
+                r'不[動働勁劫]産[番悉畜]号': '不動産番号',
+                r'[不下]勤在[番号畜]': '不動産番号',
+                
+                # 所在地の修正パターン
+                r'所[在任]地?': '所在',
+                r'所在[地他場]': '所在',
+                
+                # 地番の修正パターン
+                r'地[悉畜香]': '地番',
+                r'[池地土]番': '地番',
+                
+                # 地積の修正パターン
+                r'地[債積績]': '地積',
+                r'[他池地]積': '地積',
+                
+                # 権利部の修正パターン
+                r'権[利リ梨]部': '権利部',
+                r'[樹権様]利部': '権利部',
+                
+                # 甲区の修正パターン
+                r'[甲申車]区': '甲区',
+                r'甲[区図回]': '甲区',
+                
+                # 乙区の修正パターン
+                r'[乙入己]区': '乙区',
+                r'乙[区回図]': '乙区',
+                
+                # 順位の修正パターン
+                r'[順馴][位立役]': '順位',
+                
+                # 登記の目的の修正パターン
+                r'登記[の目的の目]的': '登記の目的',
+                r'登[記計]の[目日][的糊]': '登記の目的',
+                
+                # 原因の修正パターン
+                r'[原厚源]因': '原因',
+                
+                # 所有者の修正パターン
+                r'所[宥有肴]者': '所有者',
+                r'[新斯所][育有宥]者': '所有者',
+                
+                # 権利者の修正パターン
+                r'権[利リ梨][者省番]': '権利者',
+                
+                # 登記日付の修正パターン
+                r'[登等]記(日|年月日)': '登記日',
+                
+                # 平方メートルの修正パターン
+                r'[干千平]方メ[一ー]トル': '平方メートル',
+                r'平方メ[一ートル|メトル]': '平方メートル',
+                
+                # 住所の修正パターン
+                r'[住往主]所': '住所',
+                
+                # 抵当権の修正パターン
+                r'[底抵低](当|当たり)[権樹様]': '抵当権',
+                
+                # 根抵当権の修正パターン
+                r'[恨根]抵当権': '根抵当権',
+                
+                # 所有権の修正パターン
+                r'所[有宥]権': '所有権',
+                r'所有[権椎樹横]': '所有権',
+                
+                # 所有権移転の修正パターン
+                r'所有権[移転役韓]': '所有権移転',
+                r'所有権移[転伝点]': '所有権移転',
+                
+                # その他の登記目的
+                r'抵当権[設股]定': '抵当権設定',
+                r'根抵当権[設股]定': '根抵当権設定',
+                r'[質借]権[設殻]定': '賃借権設定',
+                r'地[上土]権[設股]定': '地上権設定',
+                
+                # 原因行為の修正
+                r'[売買責]買': '売買',
+                r'[相租租]続': '相続',
+                r'[贈賄増]与': '贈与',
+                r'[合命今]併': '合併',
+                r'[遣還逗]贈': '遺贈',
+                
+                # 年号の修正
+                r'[零令今]和': '令和',
+                r'[平乎干]成': '平成',
+                r'[昭招照]和': '昭和',
+                r'[大犬太]正': '大正',
+                r'[明朋盟]治': '明治',
+                
+                # 数量・単位関連
+                r'([0-9]+)\s*([0-9]+)': r'\1\2',  # 数字間の空白を削除
+                r'([0-9]+)[,.，．]([0-9]+)': r'\1.\2',  # 小数点を統一
+                
+                # その他の共通ミス
+                r'氏[れ名目]': '氏名',
+                r'[法去去]人': '法人',
+                r'[信言]託': '信託',
+                r'[予子干]告': '予告',
+                r'[変変]更': '変更'
+            }
+            
+            # 修正パターンを適用
+            for pattern, replacement in corrections.items():
+                line = re.sub(pattern, replacement, line)
+            
+            # 単位の統一
+            line = line.replace('平米', '平方メートル').replace('㎡', '平方メートル')
+            line = line.replace('立米', '立方メートル').replace('㎥', '立方メートル')
+            
+            # 日付表記の統一
+            # 例: 令和5年1月1日 → 2023年1月1日
+            def convert_japanese_era(match):
+                era = match.group(1)
+                year = int(match.group(2))
+                month = int(match.group(3))
+                day = int(match.group(4))
+                
+                if era == '令和' or era == '令和':
+                    year = 2018 + year
+                elif era == '平成' or era == '平成':
+                    year = 1988 + year
+                elif era == '昭和' or era == '昭和':
+                    year = 1925 + year
+                elif era == '大正' or era == '大正':
+                    year = 1911 + year
+                elif era == '明治' or era == '明治':
+                    year = 1867 + year
+                
+                return f"{year}年{month}月{day}日"
+            
+            # 和暦を西暦に変換
+            line = re.sub(r'(令和|平成|昭和|大正|明治)(\d+)年(\d+)月(\d+)日', convert_japanese_era, line)
+            
+            # ハイフン・カッコの正規化
+            line = line.replace('－', '-').replace('―', '-').replace('ー', '-')
+            
+            # 特定のフレーズの後に改行を入れる
+            section_keywords = ['不動産番号', '所在', '地番', '地積', '所有者', '住所', '権利部', '甲区', '乙区', '登記の目的', '原因']
+            for keyword in section_keywords:
+                if keyword in line and not line.startswith(keyword):
+                    line = re.sub(f'([^{keyword[0]}]){keyword}', f'\\1\n{keyword}', line)
+            
+            normalized_lines.append(line)
+        
+        # 結果テキストの組み立て
+        processed_text = '\n'.join(normalized_lines)
+        
+        # 特定のセクション境界を認識して改行を追加
+        # 区部（甲区・乙区）の前には空行を入れる
+        processed_text = re.sub(r'([^\n])(甲区|乙区)', r'\1\n\n\2', processed_text)
+        
+        # 不要な連続改行を削除
+        processed_text = re.sub(r'\n{3,}', '\n\n', processed_text)
+        
+        return processed_text
+    
+    def detect_table_structure(self, image):
+        """
+        画像内のテーブル構造を検出する
+        
+        Args:
+            image (numpy.ndarray): 処理する画像
+            
+        Returns:
+            list: 検出されたテーブルの座標リスト
+        """
+        # 水平・垂直線の検出
+        horizontal = np.copy(image)
+        vertical = np.copy(image)
+        
+        # 画像の幅と高さを取得
+        img_height, img_width = horizontal.shape
+        
+        # 水平線の検出
+        horizontal_size = int(img_width / 30)
+        horizontalStructure = cv2.getStructuringElement(cv2.MORPH_RECT, (horizontal_size, 1))
+        horizontal = cv2.erode(horizontal, horizontalStructure)
+        horizontal = cv2.dilate(horizontal, horizontalStructure)
+        
+        # 垂直線の検出
+        vertical_size = int(img_height / 30)
+        verticalStructure = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vertical_size))
+        vertical = cv2.erode(vertical, verticalStructure)
+        vertical = cv2.dilate(vertical, verticalStructure)
+        
+        # 水平線と垂直線の交点を検出
+        mask = horizontal + vertical
+        
+        # 輪郭検出
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # テーブルセルの座標を取得
+        table_cells = []
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            if w > 20 and h > 20:  # 小さすぎるセルは除外
+                table_cells.append((x, y, w, h))
+        
+        return table_cells
+    
+    def extract_structured_data(self, ocr_text):
+        """
+        OCRテキストから構造化データを抽出する
+        
+        Args:
+            ocr_text (str): OCRで抽出されたテキスト
+            
+        Returns:
+            dict: 構造化データ
+            float: 信頼度スコア
+        """
+        # テキストが空や短すぎる場合は早期リターン
+        if not ocr_text or len(ocr_text.strip()) < 20:
+            return {}, 0.0
+            
+        # 結果を格納する辞書を初期化
+        structured_data = {
+            "property_number": None,  # 不動産番号
+            "address": None,         # 所在
+            "lot_number": None,      # 地番
+            "area": None,            # 地積
+            "area_unit": None,       # 単位（平方メートルなど）
+            "owner": {               # 所有者情報
+                "name": None,        # 氏名
+                "address": None      # 住所
+            },
+            "rights": []            # 権利情報（甲区・乙区）
+        }
+        
+        # テキストを行に分割
+        lines = ocr_text.split('\n')
+        
+        # 不動産番号を抽出するパターン
+        property_patterns = [
+            r'不動産番号[：:]\s*(\d{4}[-－]?\d{4}[-－]?\d{4})',
+            r'不動産番号\s*(\d{4}[-－]?\d{4}[-－]?\d{4})',
+            r'不動産識別番号[：:]\s*(\d{4}[-－]?\d{4}[-－]?\d{4})',
+            r'不動産[：:]\s*(\d{4}[-－]?\d{4}[-－]?\d{4})',
+            r'番号[：:]\s*(\d{4}[-－]?\d{4}[-－]?\d{4})'
+        ]
+        
+        # 所在（住所）を抽出するパターン
+        address_patterns = [
+            r'所在[：:]\s*(.+?)\s*[地番]',
+            r'所在\s+(.+?)\s+地番',
+            r'所在\s+(.+?)$',
+            r'所\s?在\s+(.+?)$'
+        ]
+        
+        # 地番を抽出するパターン
+        lot_patterns = [
+            r'地番[：:]\s*(.+?)$',
+            r'地番\s+(.+?)$',
+            r'地\s?番\s+(.+?)$'
+        ]
+        
+        # 地積（面積）を抽出するパターン
+        area_patterns = [
+            r'地積[：:]\s*([\d,.]+)\s*(平方メートル|㎡|m²|m2)',
+            r'地積\s+([\d,.]+)\s*(平方メートル|㎡|m²|m2)',
+            r'地\s?積\s+([\d,.]+)\s*(平方メートル|㎡|m²|m2)',
+            r'面積[：:]\s*([\d,.]+)\s*(平方メートル|㎡|m²|m2)',
+            r'面積\s+([\d,.]+)\s*(平方メートル|㎡|m²|m2)'
+        ]
+        
+        # 所有者名を抽出するパターン
+        owner_name_patterns = [
+            r'所有者[：:]\s*(.+?)$',
+            r'所有者\s+(.+?)$',
+            r'名義人[：:]\s*(.+?)$',
+            r'名義人\s+(.+?)$',
+            r'権利者[：:]\s*(.+?)$',
+            r'権利者\s+(.+?)$'
+        ]
+        
+        # 所有者住所を抽出するパターン
+        owner_address_patterns = [
+            r'住所[：:]\s*(.+?)$',
+            r'住所\s+(.+?)$',
+            r'住\s?所\s+(.+?)$',
+            r'(東京都|北海道|大阪府|京都府|.+?[都道府県].+?[市区町村].+?[0-9０-９丁目番地号]+)'
+        ]
+        
+        # 各パターンで抽出を試みる
+        for line in lines:
+            # 不動産番号の抽出
+            if not structured_data["property_number"]:
+                for pattern in property_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        structured_data["property_number"] = match.group(1)
+                        break
+            
+            # 所在（住所）の抽出
+            if not structured_data["address"]:
+                for pattern in address_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        structured_data["address"] = match.group(1).strip()
+                        break
+            
+            # 地番の抽出
+            if not structured_data["lot_number"]:
+                for pattern in lot_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        structured_data["lot_number"] = match.group(1).strip()
+                        break
+            
+            # 地積（面積）の抽出
+            if not structured_data["area"]:
+                for pattern in area_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        # 数値に変換（コンマを除去）
+                        area_str = match.group(1).replace(',', '')
+                        try:
+                            structured_data["area"] = float(area_str)
+                            structured_data["area_unit"] = match.group(2)
+                        except ValueError:
+                            pass
+                        break
+            
+            # 所有者名の抽出
+            if not structured_data["owner"]["name"]:
+                for pattern in owner_name_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        structured_data["owner"]["name"] = match.group(1).strip()
+                        break
+            
+            # 所有者住所の抽出
+            if not structured_data["owner"]["address"]:
+                for pattern in owner_address_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        structured_data["owner"]["address"] = match.group(1).strip()
+                        break
+        
+        # 甲区（所有権）情報の抽出
+        ownership_rights = self._extract_ownership_rights(ocr_text)
+        
+        # 乙区（抵当権）情報の抽出
+        mortgage_rights = self._extract_mortgage_rights(ocr_text)
+        
+        # 権利情報を結合
+        if ownership_rights:
+            structured_data["rights"].extend(ownership_rights)
+        
+        if mortgage_rights:
+            structured_data["rights"].extend(mortgage_rights)
+        
+        # データの検証と補完
+        structured_data = self._validate_and_enhance_data(structured_data)
+        
+        # 信頼度スコアの計算
+        confidence_score = self._calculate_confidence(structured_data)
+        
+        return structured_data, confidence_score
+    
+    def _calculate_confidence(self, data):
+        """
+        抽出されたデータの信頼度を計算する
+        
+        Args:
+            data (dict): 抽出された構造化データ
+            
+        Returns:
+            float: 信頼度スコア（0.0〜1.0）
+        """
+        # 各フィールドの有無と質に基づくスコア
+        # 基本スコア配分（合計100%）
+        score_weights = {
+            "property_number": 0.15,  # 15%
+            "address": 0.15,          # 15%
+            "lot_number": 0.10,       # 10%
+            "area": 0.10,             # 10%
+            "owner": {
+                "name": 0.15,         # 15%
+                "address": 0.10       # 10%
+            },
+            "rights": 0.25            # 25%
+        }
+        
+        total_score = 0.0
+        
+        # 基本フィールドのスコア計算
+        for field in ["property_number", "address", "lot_number", "area"]:
+            if data.get(field) is not None:
+                total_score += score_weights[field]
+        
+        # 所有者情報のスコア計算
+        if data.get("owner"):
+            if data["owner"].get("name"):
+                total_score += score_weights["owner"]["name"]
+            if data["owner"].get("address"):
+                total_score += score_weights["owner"]["address"]
+        
+        # 権利情報のスコア計算
+        if data.get("rights") and isinstance(data["rights"], list):
+            # 権利数に応じたスコア（最大でscore_weights["rights"]）
+            rights_count = len(data["rights"])
+            if rights_count > 0:
+                # 権利が多いほど信頼度は高いが、上限あり
+                rights_score = min(rights_count / 3, 1.0) * score_weights["rights"]
+                total_score += rights_score
+        
+        return total_score
+    
+    def _extract_ownership_rights(self, ocr_text):
+        """
+        甲区（所有権）情報を抽出する
+        
+        Args:
+            ocr_text (str): OCRで抽出されたテキスト
+            
+        Returns:
+            list: 所有権情報のリスト
+        """
+        ownership_rights = []
+        
+        # 甲区部分を抽出
+        matches = re.finditer(r'(甲区|所有権).+?(?=(乙区|抵当権|根抵当権|権利部|末尾|$))', ocr_text, re.DOTALL)
+        
+        for match in matches:
+            ko_section = match.group(0)
+            
+            # 各エントリを分離（順位番号ごと）
+            entries = re.split(r'順位番号\s*(\d+)', ko_section)
+            
+            for i in range(1, len(entries), 2):
+                if i+1 < len(entries):
+                    rank = entries[i]
+                    content = entries[i+1]
+                    
+                    # エントリから情報を抽出
+                    right = {
+                        "section": "甲区",
+                        "rank": int(rank),
+                        "type": "ownership",
+                        "purpose": None,
+                        "date": None,
+                        "cause": None,
+                        "rights_holder": None
+                    }
+                    
+                    # 登記目的を抽出
+                    purpose_match = re.search(r'登記目的[：:]\s*(.+?)$', content, re.MULTILINE)
+                    if purpose_match:
+                        right["purpose"] = purpose_match.group(1).strip()
+                    else:
+                        purpose_match = re.search(r'目的[：:]\s*(.+?)$', content, re.MULTILINE)
+                        if purpose_match:
+                            right["purpose"] = purpose_match.group(1).strip()
+                    
+                    # 登記日付を抽出
+                    date_patterns = [
+                        r'登記日付[：:]\s*(.+?)$',
+                        r'登記日[：:]\s*(.+?)$',
+                        r'日付[：:]\s*(.+?)$',
+                        r'(令和|平成|昭和)(\d+)年(\d+)月(\d+)日',
+                        r'(\d{4})年(\d{1,2})月(\d{1,2})日'
+                    ]
+                    
+                    for pattern in date_patterns:
+                        date_match = re.search(pattern, content, re.MULTILINE)
+                        if date_match:
+                            if '令和' in pattern or '平成' in pattern or '昭和' in pattern:
+                                # 和暦から西暦への変換が必要
+                                era = date_match.group(1)
+                                year = int(date_match.group(2))
+                                month = int(date_match.group(3))
+                                day = int(date_match.group(4))
+                                
+                                # 和暦の基準年
+                                base_year = 0
+                                if era == '令和':
+                                    base_year = 2018
+                                elif era == '平成':
+                                    base_year = 1988
+                                elif era == '昭和':
+                                    base_year = 1925
+                                
+                                gregorian_year = base_year + year
+                                right["date"] = f"{gregorian_year}年{month}月{day}日"
+                            else:
+                                right["date"] = date_match.group(0)
+                            break
+                    
+                    # 登記原因を抽出
+                    cause_patterns = [
+                        r'登記原因[：:]\s*(.+?)$',
+                        r'原因[：:]\s*(.+?)$'
+                    ]
+                    
+                    for pattern in cause_patterns:
+                        cause_match = re.search(pattern, content, re.MULTILINE)
+                        if cause_match:
+                            right["cause"] = cause_match.group(1).strip()
+                            break
+                    
+                    # 権利者を抽出
+                    holder_patterns = [
+                        r'権利者[：:]\s*(.+?)$',
+                        r'所有者[：:]\s*(.+?)$',
+                        r'名義人[：:]\s*(.+?)$'
+                    ]
+                    
+                    for pattern in holder_patterns:
+                        holder_match = re.search(pattern, content, re.MULTILINE)
+                        if holder_match:
+                            right["rights_holder"] = holder_match.group(1).strip()
+                            break
+                    
+                    ownership_rights.append(right)
+        
+        return ownership_rights
+    
+    def _extract_mortgage_rights(self, ocr_text):
+        """
+        乙区（抵当権）情報を抽出する
+        
+        Args:
+            ocr_text (str): OCRで抽出されたテキスト
+            
+        Returns:
+            list: 抵当権情報のリスト
+        """
+        mortgage_rights = []
+        
+        # 乙区部分を抽出
+        matches = re.finditer(r'(乙区|抵当権).+?(?=(甲区|所有権|権利部|末尾|$))', ocr_text, re.DOTALL)
+        
+        for match in matches:
+            otsu_section = match.group(0)
+            
+            # 各エントリを分離（順位番号ごと）
+            entries = re.split(r'順位番号\s*(\d+)', otsu_section)
+            
+            for i in range(1, len(entries), 2):
+                if i+1 < len(entries):
+                    rank = entries[i]
+                    content = entries[i+1]
+                    
+                    # エントリから情報を抽出
+                    right = {
+                        "section": "乙区",
+                        "rank": int(rank),
+                        "type": "mortgage",
+                        "purpose": None,
+                        "date": None,
+                        "cause": None,
+                        "amount": None,
+                        "interest_rate": None,
+                        "creditor": None,
+                        "debtor": None
+                    }
+                    
+                    # 登記目的を抽出
+                    purpose_match = re.search(r'登記目的[：:]\s*(.+?)$', content, re.MULTILINE)
+                    if purpose_match:
+                        right["purpose"] = purpose_match.group(1).strip()
+                    else:
+                        purpose_match = re.search(r'目的[：:]\s*(.+?)$', content, re.MULTILINE)
+                        if purpose_match:
+                            right["purpose"] = purpose_match.group(1).strip()
+                    
+                    # 登記日付を抽出
+                    date_patterns = [
+                        r'登記日付[：:]\s*(.+?)$',
+                        r'登記日[：:]\s*(.+?)$',
+                        r'日付[：:]\s*(.+?)$',
+                        r'(令和|平成|昭和)(\d+)年(\d+)月(\d+)日',
+                        r'(\d{4})年(\d{1,2})月(\d{1,2})日'
+                    ]
+                    
+                    for pattern in date_patterns:
+                        date_match = re.search(pattern, content, re.MULTILINE)
+                        if date_match:
+                            if '令和' in pattern or '平成' in pattern or '昭和' in pattern:
+                                # 和暦から西暦への変換
+                                era = date_match.group(1)
+                                year = int(date_match.group(2))
+                                month = int(date_match.group(3))
+                                day = int(date_match.group(4))
+                                
+                                base_year = 0
+                                if era == '令和':
+                                    base_year = 2018
+                                elif era == '平成':
+                                    base_year = 1988
+                                elif era == '昭和':
+                                    base_year = 1925
+                                
+                                gregorian_year = base_year + year
+                                right["date"] = f"{gregorian_year}年{month}月{day}日"
+                            else:
+                                right["date"] = date_match.group(0)
+                            break
+                    
+                    # 登記原因を抽出
+                    cause_patterns = [
+                        r'登記原因[：:]\s*(.+?)$',
+                        r'原因[：:]\s*(.+?)$'
+                    ]
+                    
+                    for pattern in cause_patterns:
+                        cause_match = re.search(pattern, content, re.MULTILINE)
+                        if cause_match:
+                            right["cause"] = cause_match.group(1).strip()
+                            break
+                    
+                    # 債権額を抽出
+                    amount_match = re.search(r'債権額[：:]\s*(.+?)$|金額[：:]\s*(.+?)$', content, re.MULTILINE)
+                    if amount_match:
+                        right["amount"] = amount_match.group(1) if amount_match.group(1) else amount_match.group(2)
+                    
+                    # 利率を抽出
+                    interest_match = re.search(r'利率[：:]\s*(.+?)$|利息[：:]\s*(.+?)$', content, re.MULTILINE)
+                    if interest_match:
+                        right["interest_rate"] = interest_match.group(1) if interest_match.group(1) else interest_match.group(2)
+                    
+                    # 債権者を抽出
+                    creditor_patterns = [
+                        r'債権者[：:]\s*(.+?)$',
+                        r'抵当権者[：:]\s*(.+?)$',
+                        r'権利者[：:]\s*(.+?)$'
+                    ]
+                    
+                    for pattern in creditor_patterns:
+                        creditor_match = re.search(pattern, content, re.MULTILINE)
+                        if creditor_match:
+                            right["creditor"] = creditor_match.group(1).strip()
+                            break
+                    
+                    # 債務者を抽出
+                    debtor_patterns = [
+                        r'債務者[：:]\s*(.+?)$',
+                        r'設定者[：:]\s*(.+?)$'
+                    ]
+                    
+                    for pattern in debtor_patterns:
+                        debtor_match = re.search(pattern, content, re.MULTILINE)
+                        if debtor_match:
+                            right["debtor"] = debtor_match.group(1).strip()
+                            break
+                    
+                    mortgage_rights.append(right)
+        
+        return mortgage_rights
+    
+    def _validate_and_enhance_data(self, data):
+        """
+        抽出データの検証と補完を行う
+        
+        Args:
+            data (dict): 抽出された構造化データ
+            
+        Returns:
+            dict: 検証・補完されたデータ
+        """
+        if not data:
+            return {}
+        
+        # 不動産番号のフォーマット検証と修正
+        if 'property_number' in data and data['property_number']:
+            # 正規フォーマット：YYYY-XXXX-XXXX
+            property_number = data["property_number"]
+            # 数字とハイフン以外を削除
+            cleaned = re.sub(r'[^0-9\-－]', '', property_number)
+            # ハイフンの統一（全角→半角）
+            cleaned = cleaned.replace('－', '-')
+            
+            # ハイフンがない場合は追加
+            if '-' not in cleaned and len(cleaned) == 12:
+                cleaned = f"{cleaned[0:4]}-{cleaned[4:8]}-{cleaned[8:12]}"
+            
+            # フォーマットを検証
+            if re.match(r'^\d{4}-\d{4}-\d{4}$', cleaned):
+                data["property_number"] = cleaned
+            else:
+                # 数字が12桁でハイフンの位置が不正な場合は修正を試みる
+                digits = re.sub(r'[^0-9]', '', cleaned)
+                if len(digits) == 12:
+                    data["property_number"] = f"{digits[0:4]}-{digits[4:8]}-{digits[8:12]}"
+                else:
+                    # 修正不能な場合はNoneにする
+                    data["property_number"] = None
+        
+        # 地積（面積）の数値化
+        if 'area' in data and data['area'] is not None:
+            try:
+                # 既に数値化されている場合は小数点第二位まで丸める
+                if isinstance(data["area"], (int, float)):
+                    data["area"] = round(float(data["area"]), 2)
+                else:
+                    # 文字列から数値への変換
+                    area_str = str(data["area"]).replace(',', '')
+                    data["area"] = round(float(area_str), 2)
+            except (ValueError, TypeError):
+                # 変換に失敗した場合はNoneに設定
+                data["area"] = None
+        
+        # 評価額の数値化（評価証明書用）
+        if 'assessed_value' in data and data['assessed_value'] is not None:
+            try:
+                # カンマや円記号を削除して数値化
+                if isinstance(data["assessed_value"], str):
+                    value_str = data["assessed_value"].replace(',', '').replace('円', '').strip()
+                    data["assessed_value"] = int(value_str)
+                elif isinstance(data["assessed_value"], (int, float)):
+                    data["assessed_value"] = int(data["assessed_value"])
+            except (ValueError, TypeError):
+                # 変換に失敗した場合はNoneに設定
+                data["assessed_value"] = None
+        
+        # 空の値をNoneに変換（再帰的に処理）
+        data = self._clean_empty_values(data)
+        
+        return data
+    
+    def _clean_empty_values(self, data_dict):
+        """
+        辞書内の空の値をNoneに変換する（再帰的）
+        
+        Args:
+            data_dict (dict): 処理する辞書
+            
+        Returns:
+            dict: 処理後の辞書
+        """
+        if not isinstance(data_dict, dict):
+            return data_dict
+            
+        result = {}
+        for key, value in data_dict.items():
+            if isinstance(value, dict):
+                result[key] = self._clean_empty_values(value)
+            elif isinstance(value, list):
+                if not value:
+                    result[key] = None
+                else:
+                    # リスト内の辞書も処理
+                    new_list = []
+                    for item in value:
+                        if isinstance(item, dict):
+                            new_list.append(self._clean_empty_values(item))
+                        else:
+                            new_list.append(item)
+                    result[key] = new_list
+            elif isinstance(value, str) and value.strip() == '':
+                result[key] = None
+            else:
+                result[key] = value
+                
+        return result
+
+    def process_image(self, image_path, output_format='json', document_type=None):
+        """
+        画像ファイルをOCR処理し、結果を返す
+        
+        Args:
+            image_path (str): 処理する画像ファイルのパス
+            output_format (str): 出力形式（'json', 'text', 'structured'）
+            document_type (str, optional): 文書タイプ ('registry', 'assessment', 'auto')
+            
+        Returns:
+            dict: 処理結果を含む辞書
+        """
+        logger.info(f"画像ファイルの処理を開始: {image_path}")
+        
+        # ドキュメントタイプが指定されていない場合は自動検出
+        if document_type is None:
+            document_type = 'auto'
+        
+        # 処理結果の辞書を初期化
+        result = {
+            'file_name': os.path.basename(image_path),
+            'file_path': image_path,
+            'processed_at': datetime.now().isoformat(),
+            'config': self.config,
+            'document_type': document_type
+        }
+        
+        try:
+            # 画像の前処理
+            processed_image, detected_orientation = self.preprocess_image(image_path)
+            logger.info(f"画像の前処理が完了しました。画像サイズ: {processed_image.shape}, 向き: {detected_orientation}")
+            
+            # テキスト抽出
+            text, confidence = self.extract_text(image_path, detected_orientation)
+            result['text'] = text
+            result['confidence'] = confidence
+            
+            # 信頼度が閾値以上の場合のみ構造化
+            if confidence >= self.config['confidence_threshold']:
+                # 文書タイプに応じた構造化処理
+                if document_type == 'auto':
+                    # 自動検出（テキスト内容で判断）
+                    if any(pattern in text for pattern in ['評価証明書', '固定資産評価証明書', '評価額']):
+                        document_type = 'assessment'
+                        result['document_type'] = 'assessment'
+                    else:
+                        document_type = 'registry'
+                        result['document_type'] = 'registry'
+                
+                # 構造化データの抽出
+                if document_type == 'assessment':
+                    # 評価証明書データ抽出
+                    structured_data, data_confidence = self.extract_assessment_data(text)
+                else:
+                    # 登記簿データ抽出
+                    structured_data, data_confidence = self.extract_structured_data(text)
+                
+                result['structured_data'] = structured_data
+                result['data_confidence'] = data_confidence
+                logger.info(f"データ抽出信頼度: {data_confidence:.1f}%、文書タイプ: {document_type}")
+            else:
+                result['structured_data'] = {}
+                result['data_confidence'] = 0.0
+                logger.warning(f"OCR信頼度が閾値を下回るため構造化をスキップします: {confidence:.1f}% < {self.config['confidence_threshold']}%")
+            
+            # 出力形式に応じた処理
+            if output_format == 'text':
+                result['output'] = text
+            elif output_format == 'structured':
+                result['output'] = result['structured_data']
+            else:  # json（デフォルト）
+                result['output'] = {
+                    'text': text,
+                    'structured_data': result['structured_data'],
+                    'confidence': {
+                        'ocr': confidence,
+                        'data': result['data_confidence']
+                    },
+                    'document_type': result['document_type']
+                }
+            
+            logger.info(f"画像処理が完了しました: {image_path}")
+            
+        except Exception as e:
+            error_msg = f"処理エラー: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            result['error'] = error_msg
+            result['text'] = ""
+            result['structured_data'] = {}
+            result['confidence'] = 0.0
+            result['data_confidence'] = 0.0
+            result['output'] = None
+        
+        return result
+    
+    def batch_process(self, directory_path, extensions=None, output_format='json'):
+        """
+        ディレクトリ内の画像ファイルをバッチ処理する
+        
+        Args:
+            directory_path (str): 処理するディレクトリのパス
+            extensions (list): 処理対象のファイル拡張子のリスト（デフォルト: ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.pdf']）
+            output_format (str): 出力形式（'json', 'text', 'structured'）
+            
+        Returns:
+            list: 処理結果のリスト
+        """
+        if extensions is None:
+            extensions = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.pdf']
+        
+        # 大文字と小文字の両方に対応
+        extensions = [ext.lower() for ext in extensions] + [ext.upper() for ext in extensions]
+        
+        logger.info(f"ディレクトリのバッチ処理を開始: {directory_path}")
+        logger.info(f"対象ファイル拡張子: {extensions}")
+        
+        results = []
+        processed_count = 0
+        
+        # ディレクトリ内のファイルを検索
+        for root, _, files in os.walk(directory_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                _, file_ext = os.path.splitext(file_path)
+                
+                if file_ext in extensions:
+                    logger.info(f"ファイルを処理中 ({processed_count + 1}): {file_path}")
+                    
+                    try:
+                        # ファイル処理
+                        result = self.process_image(file_path, output_format)
+                        results.append(result)
+                        
+                        # 結果を保存
+                        output_path = self.save_result(result)
+                        logger.info(f"結果を保存しました: {output_path}")
+                        
+                        processed_count += 1
+                        
+                        # 進捗状況の表示
+                        logger.info(f"進捗: {processed_count} ファイル処理済み")
+                        
+                    except Exception as e:
+                        error_msg = f"ファイル処理エラー: {str(e)}"
+                        logger.error(error_msg, exc_info=True)
+                        results.append({
+                            'file_name': file,
+                            'file_path': file_path,
+                            'error': error_msg,
+                            'processed_at': datetime.now().isoformat()
+                        })
+        
+        logger.info(f"バッチ処理完了: {processed_count} ファイルを処理しました")
+        return results
+    
+    def save_result(self, result, output_dir=None):
+        """
+        処理結果をファイルに保存する
+        
+        Args:
+            result (dict): 処理結果を含む辞書
+            output_dir (str, optional): 出力ディレクトリ（指定がなければself.config['output_dir']を使用）
+            
+        Returns:
+            str: 保存したファイルのパス
+        """
+        if output_dir is None:
+            output_dir = self.config['output_dir']
+            
+        # 出力ディレクトリが存在することを確認
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # ファイル名を生成（元ファイル名 + タイムスタンプ）
+        original_name = os.path.splitext(result['file_name'])[0]
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        output_filename = f"{original_name}_{timestamp}"
+        
+        # JSON結果を保存
+        json_path = os.path.join(output_dir, f"{output_filename}.json")
+        try:
+            # エラーがある場合はエラー情報だけ保存
+            if 'error' in result:
+                output_data = {
+                    'file_name': result['file_name'],
+                    'file_path': result['file_path'],
+                    'processed_at': result['processed_at'],
+                    'error': result['error']
+                }
+            else:
+                # フルデータを保存（機密情報を保存したくない場合は適宜フィルタリングする）
+                output_data = {
+                    'file_name': result['file_name'],
+                    'file_path': result['file_path'],
+                    'processed_at': result['processed_at'],
+                    'confidence': result['confidence'],
+                    'data_confidence': result.get('data_confidence', 0.0),
+                    'text': result['text'],
+                    'structured_data': result.get('structured_data', {})
+                }
+            
+            with open(json_path, 'w', encoding='utf-8') as f:
+                json.dump(output_data, f, ensure_ascii=False, indent=2)
+            
+            logger.info(f"結果をJSONファイルに保存しました: {json_path}")
+            
+            # テキスト結果も保存
+            if 'text' in result and result['text']:
+                text_path = os.path.join(output_dir, f"{output_filename}.txt")
+                with open(text_path, 'w', encoding='utf-8') as f:
+                    f.write(result['text'])
+                logger.info(f"テキスト結果を保存しました: {text_path}")
+            
+            return json_path
+        
+        except Exception as e:
+            error_msg = f"結果保存エラー: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            return None
+    
+    def get_summary(self, structured_data):
+        """
+        構造化データの概要を返す
+        
+        Args:
+            structured_data (dict): 構造化データ
+            
+        Returns:
+            str: データの概要テキスト
+        """
+        if not structured_data:
+            return "データがありません"
+            
+        # 不動産基本情報
+        summary_lines = []
+        
+        if structured_data.get("property_number"):
+            summary_lines.append(f"不動産番号: {structured_data['property_number']}")
+        
+        if structured_data.get("address"):
+            summary_lines.append(f"所在: {structured_data['address']}")
+        
+        if structured_data.get("lot_number"):
+            summary_lines.append(f"地番: {structured_data['lot_number']}")
+        
+        if structured_data.get("area"):
+            area_unit = structured_data.get("area_unit", "平方メートル")
+            summary_lines.append(f"地積: {structured_data['area']} {area_unit}")
+        
+        # 所有者情報
+        owner = structured_data.get("owner", {})
+        if owner.get("name"):
+            summary_lines.append(f"所有者: {owner['name']}")
+            if owner.get("address"):
+                summary_lines.append(f"所有者住所: {owner['address']}")
+        
+        # 権利情報
+        rights = structured_data.get("rights", [])
+        if rights:
+            summary_lines.append("\n【権利情報】")
+            for right in rights:
+                section = right.get("section", "")
+                rank = right.get("rank", "")
+                purpose = right.get("purpose", "")
+                date = right.get("date", "")
+                
+                summary_lines.append(f"{section} 順位{rank}: {purpose} ({date})")
+        
+        return "\n".join(summary_lines)
+
+    def perform_ocr(self, image, preprocess_params=None):
+        """
+        画像からテキストを抽出するOCR処理の実施（最適化版）
+        
+        Args:
+            image (PIL.Image or numpy.ndarray): OCR対象の画像
+            preprocess_params (dict, optional): 前処理パラメータ
+            
+        Returns:
+            str: 抽出されたテキスト
+            dict: OCR結果のメタデータ
+        """
+        if not preprocess_params:
+            preprocess_params = {}
+            
+        # numpy配列の場合はPIL.Imageに変換
+        if isinstance(image, np.ndarray):
+            image = Image.fromarray(image)
+        
+        # OCRの設定
+        config = f'-l {self.config["lang"]} --psm {self.config["psm"]} --oem {self.config["oem"]}'
+        
+        # tessdata_dirが指定されている場合は追加
+        if self.config.get("tessdata_dir"):
+            config += f' --tessdata-dir {self.config["tessdata_dir"]}'
+        
+        # 日本語特有の設定
+        config += ' -c preserve_interword_spaces=1'  # 単語間のスペースを保持
+        config += ' -c textord_space_size_is_variable=1'  # 可変スペースサイズ
+        
+        # 縦書きモードの検出結果に基づいて設定を調整
+        vertical_detected = preprocess_params.get("vertical_text_detected", False)
+        
+        # OCRのメタデータを初期化
+        ocr_metadata = {
+            "timestamp": datetime.now().isoformat(),
+            "config": config,
+            "original_size": preprocess_params.get("original_size", image.size),
+            "processed_size": image.size,
+            "vertical_text_detected": vertical_detected,
+            "confidence_scores": {}
+        }
+        
+        # 画像方向のバリエーションを試す
+        results = []
+        
+        # 試行する方向のリスト
+        # 縦書きが検出されている場合は回転バリエーションを優先
+        if vertical_detected:
+            rotations = [(90, "vertical"), (0, "horizontal"), (270, "vertical_alt")]
+        else:
+            rotations = [(0, "horizontal"), (90, "vertical"), (270, "vertical_alt")]
+        
+        for angle, orientation in rotations:
+            try:
+                # 画像の回転（必要な場合）
+                if angle != 0:
+                    rotated_img = image.rotate(angle, expand=True, fillcolor=255)
+                else:
+                    rotated_img = image
+                
+                # OCR実行時の追加設定
+                current_config = config
+                
+                # 縦書きモードで特別な設定を追加
+                if orientation.startswith("vertical"):
+                    current_config += ' -c textord_old_baselines=0'  # 古いベースライン検出を無効化
+                    current_config += ' -c textord_fix_xheight=0'  # x-heightの修正を無効化
+                
+                # データフレーム形式でOCR結果を取得
+                ocr_data = pytesseract.image_to_data(rotated_img, config=current_config, 
+                                                   output_type=pytesseract.Output.DATAFRAME)
+                
+                # 有効なテキスト行のみをフィルタリング
+                valid_lines = ocr_data[(ocr_data['conf'] > 0) & (ocr_data['text'].str.strip() != '')]
+                
+                # テキストを結合
+                if not valid_lines.empty:
+                    # 行ごとにグループ化して結合
+                    text_lines = []
+                    for line_num, line_group in valid_lines.groupby('line_num'):
+                        # 行内の単語を左から右へソート
+                        sorted_words = line_group.sort_values('left')
+                        line_text = ' '.join(sorted_words['text'].astype(str))
+                        text_lines.append(line_text)
+                    
+                    # 各行を改行で結合
+                    text = '\n'.join(text_lines)
+                    
+                    # 信頼度の計算（有効なテキスト行の平均）
+                    confidence = valid_lines['conf'].mean()
+                    
+                    # キーワードスコアの計算
+                    keyword_score = self._calculate_keyword_score(text)
+                    
+                    # スコア調整（キーワードスコアを加算、最大100点）
+                    adjusted_confidence = min(confidence + keyword_score, 100)
+                    
+                    results.append({
+                        "text": text,
+                        "confidence": confidence,
+                        "keyword_score": keyword_score,
+                        "adjusted_confidence": adjusted_confidence,
+                        "orientation": orientation
+                    })
+                    
+                    logger.info(f"OCR完了 - 向き: {orientation}, 信頼度: {confidence:.1f}%, "
+                               f"調整後: {adjusted_confidence:.1f}%")
+                    
+                except Exception as e:
+                    logger.error(f"OCR処理エラー ({orientation}): {str(e)}")
+        
+        # 最も信頼度の高い結果を選択
+        if results:
+            best_result = max(results, key=lambda x: x["adjusted_confidence"])
+            
+            # メタデータに結果を記録
+            ocr_metadata["confidence_scores"] = {
+                "best": best_result["adjusted_confidence"],
+                "raw": best_result["confidence"],
+                "keyword_score": best_result["keyword_score"],
+                "orientation": best_result["orientation"]
+            }
+            
+            # 向きごとの結果も記録
+            for result in results:
+                ocr_metadata["confidence_scores"][result["orientation"]] = result["adjusted_confidence"]
+            
+            # テキスト後処理
+            processed_text = self._enhanced_post_process_text(best_result["text"])
+            
+            return processed_text, ocr_metadata
+        else:
+            return "", {"error": "テキスト抽出に失敗しました", "confidence_scores": {"best": 0}}
+    
+    def _calculate_keyword_score(self, text):
+        """
+        登記簿特有のキーワードに基づいてスコアを計算
+        
+        Args:
+            text (str): OCRで抽出されたテキスト
+            
+        Returns:
+            float: キーワードに基づく追加スコア
+        """
+        # 登記簿特有のキーワードリスト
+        keywords = [
+            '不動産番号', '所在', '地番', '地積', '平方メートル',
+            '所有者', '住所', '権利部', '甲区', '乙区',
+            '順位番号', '登記目的', '原因', '日付', '権利者',
+            '共有者', '持分', '抵当権', '根抵当権', '地上権',
+            '賃借権', '東京', '大阪', '不動産', '登記簿'
+        ]
+        
+        # 正規表現パターンのエスケープ
+        keywords = [re.escape(k) for k in keywords]
+        
+        # キーワードマッチングパターン
+        pattern = '|'.join(keywords)
+        
+        # テキスト内のキーワード出現回数
+        matches = re.findall(pattern, text)
+        
+        # スコア計算（各キーワードにつき2ポイント、最大20ポイント）
+        score = min(len(matches) * 2, 20)
+        
+        return score
+    
+    def _enhanced_post_process_text(self, text):
+        """
+        OCR結果のテキストを強化後処理
+        
+        Args:
+            text (str): OCRで抽出された生テキスト
+            
+        Returns:
+            str: 後処理されたテキスト
+        """
+        if not text:
+            return text
+        
+        # 基本的な後処理
+        text = self._post_process_text(text)
+        
+        # 登記簿特有のパターン修正
+        # 不動産番号フォーマットの修正（例: 1234 5678 9012 → 1234-5678-9012）
+        text = re.sub(r'(\d{4})\s+(\d{4})\s+(\d{4})', r'\1-\2-\3', text)
+        
+        # 順位番号のパターン強化
+        text = re.sub(r'順位\s*(番号)?\s*(\d+)', r'順位番号 \2', text)
+        
+        # 項目名の後にある値を見やすく整形
+        items = ['所在', '地番', '地積', '家屋番号', '種類', '構造', '床面積']
+        for item in items:
+            # 項目名の後に区切り文字を追加
+            text = re.sub(f'({item})[　 ]*([^：:\n])', f'\\1: \\2', text)
+        
+        # 改行の最適化
+        # 1. 不要な空行の削除（3つ以上の連続改行を2つに）
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        
+        # 2. 主要セクションの前に空行を挿入
+        sections = ['不動産番号', '所在', '地番', '地積', '所有者', '権利部', '甲区', '乙区']
+        for section in sections:
+            pattern = f'(?<!\n\n)({section})'
+            text = re.sub(pattern, f'\n\n\\1', text)
+        
+        # 3. 項目の階層構造を表現
+        text = re.sub(r'(順位番号 \d+)', r'\n\1', text)
+        
+        # 4. 所有者情報の整形
+        text = re.sub(r'(所有者)[:：]?\s*(.+?)\n(住所)[:：]?\s*(.+)', r'\1: \2\n    \3: \4', text)
+        
+        # 日付フォーマットの統一
+        # 1. 令和→西暦変換は_post_process_textで実行済み
+        
+        # 2. 日付の区切り文字を統一
+        text = re.sub(r'(\d{4})[年/](\d{1,2})[月/](\d{1,2})日?', r'\1年\2月\3日', text)
+        
+        # 特殊なケースの処理
+        # 1. 面積単位の統一
+        text = re.sub(r'平方メ[ートル一―]+|平米|㎡|m2|m²', '平方メートル', text)
+        
+        # 2. 金額表記の統一
+        text = re.sub(r'金\s*([0-9,，]+)\s*円', r'\1円', text)
+        text = re.sub(r'([0-9,，]+)\s*万\s*円', r'\1万円', text)
+        
+        # 3. 混同されやすい文字の修正
+        text = text.replace('オ', '才').replace('二', '弐').replace('夕', 'タ')
+        
+        # 4. 抵当権・担保権関連の整形
+        text = re.sub(r'(債権額|極度額)[　 ]*([^：:\n])', r'\1: \2', text)
+        text = re.sub(r'(利率|損害金)[　 ]*([^：:\n])', r'\1: \2', text)
+        
+        return text
+
+    def extract_assessment_data(self, ocr_text):
+        """
+        OCRテキストから評価証明書のデータを抽出する
+        
+        Args:
+            ocr_text (str): OCRで抽出されたテキスト
+            
+        Returns:
+            dict: 評価証明書から抽出された構造化データ
+            float: 信頼度スコア
+        """
+        # テキストが空や短すぎる場合は早期リターン
+        if not ocr_text or len(ocr_text.strip()) < 20:
+            return {}, 0.0
+            
+        # 結果を格納する辞書を初期化
+        structured_data = {
+            "document_type": "評価証明書",     # 文書タイプ
+            "property_number": None,           # 不動産番号
+            "address": None,                   # 所在
+            "lot_number": None,                # 地番
+            "area": None,                      # 地積
+            "area_unit": None,                 # 単位（平方メートルなど）
+            "assessed_value": None,            # 評価額
+            "assessment_date": None,           # 評価時点
+            "owner": {                         # 所有者情報
+                "name": None,                  # 氏名
+                "address": None                # 住所
+            },
+            "property_type": None              # 物件種別（土地・建物等）
+        }
+        
+        # テキストを行に分割
+        lines = ocr_text.split('\n')
+        
+        # 評価証明書を特定するパターン
+        assessment_cert_patterns = [
+            r'評価証明書',
+            r'固定資産評価証明書',
+            r'評価額証明書',
+            r'資産評価証明'
+        ]
+        
+        # 評価証明書かどうかを確認
+        is_assessment_cert = False
+        for pattern in assessment_cert_patterns:
+            if re.search(pattern, ocr_text):
+                is_assessment_cert = True
+                structured_data["document_type"] = pattern
+                break
+                
+        if not is_assessment_cert:
+            # 評価証明書でない場合は信頼度0で空データを返す
+            return {}, 0.0
+        
+        # 物件種別を抽出するパターン
+        property_type_patterns = [
+            r'物件種別[：:]\s*(.+?)$',
+            r'物件種別\s+(.+?)$',
+            r'種別[：:]\s*(.+?)$',
+            r'種類[：:]\s*(.+?)$',
+            r'(土地|建物|家屋|居宅|共同住宅|事務所|店舗)$'
+        ]
+        
+        # 評価額を抽出するパターン
+        assessed_value_patterns = [
+            r'評価額[：:]\s*([\d,]+)円',
+            r'評価額\s+([\d,]+)円',
+            r'評価額[：:]\s*([\d,]+)\s*円',
+            r'評価額\s+([\d,]+)\s*円',
+            r'([\d,]+)円[（(]評価額[)）]',
+            r'[：:]?\s*([\d,]+)円'
+        ]
+        
+        # 評価時点を抽出するパターン
+        assessment_date_patterns = [
+            r'時点[：:]\s*(.+?)$',
+            r'評価時点[：:]\s*(.+?)$',
+            r'評価基準日[：:]\s*(.+?)$',
+            r'(\d{4}年\d{1,2}月\d{1,2}日)時点',
+            r'(\d{4}年\d{1,2}月\d{1,2}日)現在',
+            r'令和(\d+)年(\d+)月(\d+)日'
+        ]
+        
+        # 不動産番号、所在、地番、面積なども登記簿OCRと同様に抽出
+        property_patterns = [
+            r'不動産番号[：:]\s*(\d{4}[-－]?\d{4}[-－]?\d{4})',
+            r'不動産番号\s*(\d{4}[-－]?\d{4}[-－]?\d{4})',
+            r'番号[：:]\s*(\d{4}[-－]?\d{4}[-－]?\d{4})'
+        ]
+        
+        address_patterns = [
+            r'所在[：:]\s*(.+?)\s*[地番]',
+            r'所在\s+(.+?)\s+地番',
+            r'所在\s+(.+?)$',
+            r'所\s?在\s+(.+?)$'
+        ]
+        
+        lot_patterns = [
+            r'地番[：:]\s*(.+?)$',
+            r'地番\s+(.+?)$',
+            r'地\s?番\s+(.+?)$'
+        ]
+        
+        area_patterns = [
+            r'地積[：:]\s*([\d,.]+)\s*(平方メートル|㎡|m²|m2)',
+            r'地積\s+([\d,.]+)\s*(平方メートル|㎡|m²|m2)',
+            r'地\s?積\s+([\d,.]+)\s*(平方メートル|㎡|m²|m2)',
+            r'面積[：:]\s*([\d,.]+)\s*(平方メートル|㎡|m²|m2)',
+            r'面積\s+([\d,.]+)\s*(平方メートル|㎡|m²|m2)'
+        ]
+        
+        # 各パターンで抽出を試みる
+        for line in lines:
+            # 物件種別の抽出
+            if not structured_data["property_type"]:
+                for pattern in property_type_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        structured_data["property_type"] = match.group(1).strip()
+                        break
+            
+            # 評価額の抽出
+            if not structured_data["assessed_value"]:
+                for pattern in assessed_value_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        # 抽出した評価額をカンマを除去して整数に変換
+                        value_str = match.group(1).replace(',', '')
+                        try:
+                            structured_data["assessed_value"] = int(value_str)
+                        except ValueError:
+                            pass
+                        break
+            
+            # 評価時点の抽出
+            if not structured_data["assessment_date"]:
+                for pattern in assessment_date_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        if '令和' in pattern:
+                            # 令和から西暦への変換
+                            reiwa_year = int(match.group(1))
+                            month = int(match.group(2))
+                            day = int(match.group(3))
+                            year = 2018 + reiwa_year
+                            structured_data["assessment_date"] = f"{year}年{month}月{day}日"
+                        else:
+                            structured_data["assessment_date"] = match.group(1).strip()
+                        break
+            
+            # 不動産番号の抽出
+            if not structured_data["property_number"]:
+                for pattern in property_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        structured_data["property_number"] = match.group(1)
+                        break
+            
+            # 所在（住所）の抽出
+            if not structured_data["address"]:
+                for pattern in address_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        structured_data["address"] = match.group(1).strip()
+                        break
+            
+            # 地番の抽出
+            if not structured_data["lot_number"]:
+                for pattern in lot_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        structured_data["lot_number"] = match.group(1).strip()
+                        break
+            
+            # 地積（面積）の抽出
+            if not structured_data["area"]:
+                for pattern in area_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        # 数値に変換（コンマを除去）
+                        area_str = match.group(1).replace(',', '')
+                        try:
+                            structured_data["area"] = float(area_str)
+                            structured_data["area_unit"] = match.group(2)
+                        except ValueError:
+                            pass
+                        break
+        
+        # 所有者情報の抽出（登記簿OCRと同じパターン）
+        owner_name_patterns = [
+            r'所有者[：:]\s*(.+?)$',
+            r'所有者\s+(.+?)$',
+            r'名義人[：:]\s*(.+?)$',
+            r'名義人\s+(.+?)$',
+            r'氏名[：:]\s*(.+?)$',
+            r'氏名\s+(.+?)$'
+        ]
+        
+        owner_address_patterns = [
+            r'住所[：:]\s*(.+?)$',
+            r'住所\s+(.+?)$',
+            r'住\s?所\s+(.+?)$',
+            r'(東京都|北海道|大阪府|京都府|.+?[都道府県].+?[市区町村].+?[0-9０-９丁目番地号]+)'
+        ]
+        
+        # 所有者名の抽出
+        for line in lines:
+            if not structured_data["owner"]["name"]:
+                for pattern in owner_name_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        structured_data["owner"]["name"] = match.group(1).strip()
+                        break
+            
+            # 所有者住所の抽出
+            if not structured_data["owner"]["address"]:
+                for pattern in owner_address_patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        structured_data["owner"]["address"] = match.group(1).strip()
+                        break
+        
+        # データの検証と補完
+        structured_data = self._validate_and_enhance_data(structured_data)
+        
+        # 信頼度スコアの計算
+        confidence_score = self._calculate_assessment_confidence(structured_data)
+        
+        return structured_data, confidence_score
+        
+    def _calculate_assessment_confidence(self, data):
+        """
+        評価証明書データの信頼度を計算する
+        
+        Args:
+            data (dict): 抽出された構造化データ
+            
+        Returns:
+            float: 信頼度スコア（0.0〜1.0）
+        """
+        # 各フィールドの有無と質に基づくスコア
+        # 基本スコア配分（合計100%）
+        score_weights = {
+            "property_number": 0.10,      # 10%
+            "address": 0.15,              # 15%
+            "lot_number": 0.05,           # 5%
+            "area": 0.10,                 # 10%
+            "assessed_value": 0.25,       # 25% - 評価証明書では評価額が重要
+            "assessment_date": 0.15,      # 15% - 評価時点も重要
+            "owner": {
+                "name": 0.10,             # 10%
+                "address": 0.05           # 5%
+            },
+            "property_type": 0.05         # 5%
+        }
+        
+        total_score = 0.0
+        
+        # 基本フィールドのスコア計算
+        for field in ["property_number", "address", "lot_number", "area", "assessed_value", "assessment_date", "property_type"]:
+            if data.get(field) is not None:
+                total_score += score_weights[field]
+        
+        # 所有者情報のスコア計算
+        if data.get("owner"):
+            if data["owner"].get("name"):
+                total_score += score_weights["owner"]["name"]
+            if data["owner"].get("address"):
+                total_score += score_weights["owner"]["address"]
+        
+        return total_score
+
+    def create_property_list(self, result_files, output_format='json'):
+        """
+        OCR結果から財産一覧を作成する
+        
+        Args:
+            result_files (list): 処理結果ファイルのパスリスト
+            output_format (str): 出力形式（'json', 'csv', 'excel'）
+            
+        Returns:
+            dict: 財産一覧データと出力パス
+        """
+        logger.info(f"財産一覧の作成を開始: {len(result_files)}件のファイル")
+        
+        # 財産リストの初期化
+        property_list = {
+            'properties': [],
+            'total': {
+                'count': 0,
+                'total_area': 0,
+                'total_value': 0
+            },
+            'created_at': datetime.now().isoformat()
+        }
+        
+        # 各ファイルを処理
+        for file_path in result_files:
+            try:
+                # JSONファイルを読み込む
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    result = json.load(f)
+                
+                # 構造化データが存在する場合のみ処理
+                if 'structured_data' in result and result['structured_data']:
+                    data = result['structured_data']
+                    
+                    # 物件情報を抽出
+                    property_info = {
+                        'file_name': result.get('file_name', ''),
+                        'property_number': data.get('property_number', ''),
+                        'address': data.get('address', ''),
+                        'lot_number': data.get('lot_number', ''),
+                        'area': data.get('area', 0),
+                        'area_unit': data.get('area_unit', '平方メートル'),
+                        'document_type': result.get('document_type', 'registry'),
+                        'confidence': result.get('confidence', 0)
+                    }
+                    
+                    # 文書タイプに応じた処理
+                    if result.get('document_type') == 'assessment' or 'assessed_value' in data:
+                        # 評価証明書の場合、評価額を追加
+                        property_info['assessed_value'] = data.get('assessed_value', 0)
+                        property_info['assessment_date'] = data.get('assessment_date', '')
+                        property_info['property_type'] = data.get('property_type', '')
+                        
+                        # 評価額が利用可能な場合は合計に加算
+                        if property_info['assessed_value']:
+                            property_list['total']['total_value'] += property_info['assessed_value']
+                    else:
+                        # 登記簿の場合は所有権情報を追加
+                        if 'rights' in data and data['rights']:
+                            # 最新の所有権情報を取得
+                            ownership_rights = [r for r in data['rights'] if r.get('type') == 'ownership']
+                            if ownership_rights:
+                                # 日付でソートして最新の情報を使用
+                                latest_right = sorted(ownership_rights, 
+                                                     key=lambda x: x.get('date', ''), 
+                                                     reverse=True)[0]
+                                property_info['latest_owner'] = latest_right.get('rights_holder', '')
+                                property_info['ownership_date'] = latest_right.get('date', '')
+                    
+                    # 所有者情報を追加
+                    if 'owner' in data and data['owner']:
+                        property_info['owner_name'] = data['owner'].get('name', '')
+                        property_info['owner_address'] = data['owner'].get('address', '')
+                    
+                    # 面積が利用可能な場合は合計に加算
+                    if property_info['area']:
+                        property_list['total']['total_area'] += property_info['area']
+                    
+                    # 財産リストに追加
+                    property_list['properties'].append(property_info)
+                    property_list['total']['count'] += 1
+                    
+                    logger.info(f"データを追加しました: {property_info.get('property_number', '不明')} - {property_info.get('address', '不明')}")
+            
+            except Exception as e:
+                logger.error(f"ファイル処理エラー: {file_path} - {str(e)}")
+                continue
+        
+        # 出力ファイルパスの生成
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        output_dir = self.config['output_dir']
+        
+        # 出力形式に応じた処理
+        if output_format == 'csv':
+            output_path = os.path.join(output_dir, f'property_list_{timestamp}.csv')
+            self._export_to_csv(property_list, output_path)
+        elif output_format == 'excel':
+            output_path = os.path.join(output_dir, f'property_list_{timestamp}.xlsx')
+            self._export_to_excel(property_list, output_path)
+        else:  # json（デフォルト）
+            output_path = os.path.join(output_dir, f'property_list_{timestamp}.json')
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(property_list, f, ensure_ascii=False, indent=2)
+        
+        logger.info(f"財産一覧の作成が完了しました: {output_path}")
+        
+        return {
+            'property_list': property_list,
+            'output_path': output_path,
+            'count': property_list['total']['count']
+        }
+    
+    def _export_to_csv(self, property_list, output_path):
+        """
+        財産一覧をCSVファイルに出力する
+        
+        Args:
+            property_list (dict): 財産一覧データ
+            output_path (str): 出力ファイルパス
+        """
+        # CSVヘッダー
+        headers = [
+            '物件番号', '所在', '地番', '面積', '単位', 
+            '所有者', '所有者住所', '評価額', '評価時点', '物件種別', 
+            '文書タイプ', 'ファイル名'
+        ]
+        
+        try:
+            with open(output_path, 'w', encoding='utf-8-sig', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(headers)
+                
+                # データ行の書き込み
+                for prop in property_list['properties']:
+                    row = [
+                        prop.get('property_number', ''),
+                        prop.get('address', ''),
+                        prop.get('lot_number', ''),
+                        prop.get('area', ''),
+                        prop.get('area_unit', ''),
+                        prop.get('owner_name', prop.get('latest_owner', '')),
+                        prop.get('owner_address', ''),
+                        prop.get('assessed_value', ''),
+                        prop.get('assessment_date', ''),
+                        prop.get('property_type', ''),
+                        prop.get('document_type', ''),
+                        prop.get('file_name', '')
+                    ]
+                    writer.writerow(row)
+                
+                # 合計行
+                writer.writerow([])
+                writer.writerow(['合計', '', '', property_list['total']['total_area'], '', '', '', 
+                                property_list['total']['total_value'], '', '', '', ''])
+            
+            logger.info(f"CSVファイルに出力しました: {output_path}")
+            
+        except Exception as e:
+            logger.error(f"CSV出力エラー: {str(e)}")
+    
+    def _export_to_excel(self, property_list, output_path):
+        """
+        財産一覧をExcelファイルに出力する
+        
+        Args:
+            property_list (dict): 財産一覧データ
+            output_path (str): 出力ファイルパス
+        """
+        try:
+            # Excel用のライブラリをインポート
+            import pandas as pd
+            
+            # データフレームの作成
+            property_data = []
+            for prop in property_list['properties']:
+                property_data.append({
+                    '物件番号': prop.get('property_number', ''),
+                    '所在': prop.get('address', ''),
+                    '地番': prop.get('lot_number', ''),
+                    '面積': prop.get('area', ''),
+                    '単位': prop.get('area_unit', ''),
+                    '所有者': prop.get('owner_name', prop.get('latest_owner', '')),
+                    '所有者住所': prop.get('owner_address', ''),
+                    '評価額': prop.get('assessed_value', ''),
+                    '評価時点': prop.get('assessment_date', ''),
+                    '物件種別': prop.get('property_type', ''),
+                    '文書タイプ': prop.get('document_type', ''),
+                    'ファイル名': prop.get('file_name', '')
+                })
+            
+            df = pd.DataFrame(property_data)
+            
+            # 合計行の追加
+            total_row = pd.DataFrame([{
+                '物件番号': '合計',
+                '所在': '',
+                '地番': '',
+                '面積': property_list['total']['total_area'],
+                '単位': '',
+                '所有者': '',
+                '所有者住所': '',
+                '評価額': property_list['total']['total_value'],
+                '評価時点': '',
+                '物件種別': '',
+                '文書タイプ': '',
+                'ファイル名': f"全{property_list['total']['count']}件"
+            }])
+            
+            df = pd.concat([df, total_row], ignore_index=True)
+            
+            # Excelファイルに保存
+            df.to_excel(output_path, index=False, sheet_name='財産一覧')
+            
+            logger.info(f"Excelファイルに出力しました: {output_path}")
+            
+        except ImportError:
+            logger.error("pandasがインストールされていません。pip install pandas openpyxlを実行してください。")
+            # CSVで代替
+            csv_path = output_path.replace('.xlsx', '.csv')
+            self._export_to_csv(property_list, csv_path)
+            logger.info(f"Excel出力の代わりにCSVファイルに出力しました: {csv_path}")
+        
+        except Exception as e:
+            logger.error(f"Excel出力エラー: {str(e)}")
+            # CSVで代替
+            csv_path = output_path.replace('.xlsx', '.csv')
+            self._export_to_csv(property_list, csv_path)
+            logger.info(f"エラーによりCSVファイルに出力しました: {csv_path}")
+
+
+# 使用例
+if __name__ == "__main__":
+    # コマンドライン引数の処理
+    if len(sys.argv) < 2:
+        print("使用方法: python ocr_implementation.py <画像ファイルまたはディレクトリ>")
+        sys.exit(1)
+    
+    input_path = sys.argv[1]
+    
+    # OCRエンジンの初期化
+    ocr = RegistryOCR()
+    
+    # ファイルまたはディレクトリの処理
+    if os.path.isfile(input_path):
+        # 単一ファイルの処理
+        result = ocr.process_image(input_path)
+        output_path = ocr.save_result(result)
+        print("処理完了: {} -> {}".format(input_path, output_path))
+    
+    elif os.path.isdir(input_path):
+        # ディレクトリのバッチ処理
+        results = ocr.batch_process(input_path)
+        
+        # 結果の要約
+        success_count = sum(1 for r in results if 'error' not in r)
+        print("\n処理完了: {}/{} ファイルが正常に処理されました".format(success_count, len(results)))
+        
+        # エラーがあれば表示
+        errors = [r for r in results if 'error' in r]
+        if errors:
+            print("\n以下のファイルでエラーが発生しました:")
+            for error in errors:
+                print("- {}: {}".format(error['file_name'], error['error']))
+    
+    else:
+        print("エラー: 指定されたパスが存在しません: {}".format(input_path))
+        sys.exit(1)

@@ -165,6 +165,54 @@
         .settings-toggle.collapsed i {
             transform: rotate(-90deg);
         }
+        
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+            overflow: hidden;
+            background-color: #000;
+            border-radius: 8px;
+        }
+        
+        #cameraView {
+            width: 100%;
+            display: block;
+        }
+        
+        .camera-controls {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .camera-options {
+            margin-bottom: 15px;
+        }
+        
+        #capturedImage {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .camera-toggle-btn {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            z-index: 10;
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -327,6 +375,32 @@
                                     <div class="form-text">表の枠線などを除去して文字認識を改善</div>
                                 </div>
                             </div>
+
+                            <!-- OpenAI OCRオプション - 新しく追加 -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <h5>OpenAI OCRオプション</h5>
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        OpenAI GPT-4 Visionを使用すると、Tesseractがインストールされていなくても高精度なOCRが可能になります。
+                                        {% if not openai_status.available %}
+                                        <br><strong>注意:</strong> OpenAI モジュールがインストールされていません。利用するには 'pip install openai' を実行してください。
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="use_openai" name="use_openai" {% if ocr_settings.use_openai %}checked{% endif %} {% if not openai_status.available %}disabled{% endif %}>
+                                        <label class="form-check-label" for="use_openai">OpenAI Vision APIを使用</label>
+                                    </div>
+                                    <div class="form-text">チェックするとOpenAI GPT-4 Visionを使用してOCR処理を行います（APIキーが必要）</div>
+                                </div>
+                                <div class="col-md-12" id="apiKeySection" style="{% if not ocr_settings.use_openai %}display: none;{% endif %}">
+                                    <label for="api_key" class="form-label">OpenAI APIキー</label>
+                                    <input type="password" class="form-control" id="api_key" name="api_key" value="{{ ocr_settings.api_key }}" placeholder="sk-...">
+                                    <div class="form-text">APIキーは安全に保存され、このブラウザセッションでのみ使用されます。環境変数 OPENAI_API_KEY にセットされている場合は空でも構いません。</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -340,9 +414,14 @@
                                 <h3>登記簿ファイルをドラッグ＆ドロップ</h3>
                                 <p>または</p>
                                 <input type="file" name="file" id="fileInput" class="d-none" accept=".jpg,.jpeg,.png,.tif,.tiff,.pdf">
-                                <button type="button" class="btn btn-primary btn-lg" id="browseButton">
-                                    <i class="bi bi-folder2-open"></i> ファイルを選択
-                                </button>
+                                <div class="d-flex justify-content-center gap-3">
+                                    <button type="button" class="btn btn-primary btn-lg" id="browseButton">
+                                        <i class="bi bi-folder2-open"></i> ファイルを選択
+                                    </button>
+                                    <button type="button" class="btn btn-success btn-lg" id="cameraButton" data-bs-toggle="modal" data-bs-target="#cameraModal">
+                                        <i class="bi bi-camera"></i> カメラでスキャン
+                                    </button>
+                                </div>
                                 <p class="mt-2 text-muted">対応形式: JPG, PNG, TIFF, PDF</p>
                             </div>
                             
@@ -352,14 +431,28 @@
                                 <button type="button" class="btn btn-outline-secondary me-2" id="changeFileButton">
                                     <i class="bi bi-arrow-left"></i> ファイルを変更
                                 </button>
-                                <button type="submit" class="btn btn-success" id="processButton">
-                                    <i class="bi bi-cpu"></i> OCR処理を実行
-                                </button>
+                                
+                                <!-- 送信ボタンを統合 -->
+                                <div class="mt-4">
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-primary btn-lg" id="processButton">
+                                            <i class="bi bi-upload me-2"></i> アップロード・OCR実行
+                                        </button>
+                                    </div>
+                                    <div class="mt-2 text-center text-muted">
+                                        {% if openai_status.has_api_key %}
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> OpenAI APIキー設定済み</span>
+                                        {% endif %}
+                                        <small>最大ファイルサイズ: 32MB</small>
+                                    </div>
+                                </div>
                                 
                                 <!-- 隠しフィールド：OCR設定 -->
                                 <input type="hidden" name="dpi" id="dpiHidden" value="{{ ocr_settings.dpi }}">
                                 <input type="hidden" name="psm" id="psmHidden" value="{{ ocr_settings.psm }}">
                                 <input type="hidden" name="oem" id="oemHidden" value="{{ ocr_settings.oem }}">
+                                <!-- カメラキャプチャ用の隠しフィールド -->
+                                <input type="hidden" name="image_data" id="imageDataField">
                             </div>
                             
                             <div id="processingContainer" class="text-center d-none">
@@ -375,6 +468,52 @@
                         </div>
                     </div>
                 </form>
+                
+                <!-- カメラモーダル -->
+                <div class="modal fade" id="cameraModal" tabindex="-1" aria-labelledby="cameraModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="cameraModalLabel">カメラでスキャン</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="camera-options mb-3">
+                                    <label for="cameraSelect" class="form-label">カメラを選択:</label>
+                                    <select id="cameraSelect" class="form-select"></select>
+                                </div>
+                                
+                                <div class="camera-container mb-3">
+                                    <video id="cameraView" autoplay playsinline></video>
+                                    <button type="button" class="camera-toggle-btn" id="switchCameraBtn">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="camera-controls">
+                                    <button id="captureBtn" class="btn btn-primary">
+                                        <i class="bi bi-camera"></i> 撮影
+                                    </button>
+                                </div>
+                                
+                                <div id="captureResult" class="mt-3 d-none">
+                                    <h5>撮影結果</h5>
+                                    <div class="text-center">
+                                        <img id="capturedImage" src="" alt="撮影した画像">
+                                    </div>
+                                    <div class="d-flex justify-content-center gap-2 mt-3">
+                                        <button id="retakeBtn" class="btn btn-secondary">
+                                            <i class="bi bi-arrow-counterclockwise"></i> 再撮影
+                                        </button>
+                                        <button id="useImageBtn" class="btn btn-success">
+                                            <i class="bi bi-check-lg"></i> この画像を使用
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
@@ -486,6 +625,191 @@
                 
                 uploadArea.classList.add('d-none');
                 previewContainer.classList.remove('d-none');
+            }
+
+            // OpenAI APIキー入力欄の表示・非表示切り替え
+            document.getElementById('use_openai').addEventListener('change', function() {
+                const apiKeySection = document.getElementById('apiKeySection');
+                if (this.checked) {
+                    apiKeySection.style.display = 'block';
+                } else {
+                    apiKeySection.style.display = 'none';
+                }
+            });
+
+            // カメラ機能
+            const cameraModal = document.getElementById('cameraModal');
+            const cameraView = document.getElementById('cameraView');
+            const captureBtn = document.getElementById('captureBtn');
+            const cameraSelect = document.getElementById('cameraSelect');
+            const switchCameraBtn = document.getElementById('switchCameraBtn');
+            const captureResult = document.getElementById('captureResult');
+            const capturedImage = document.getElementById('capturedImage');
+            const retakeBtn = document.getElementById('retakeBtn');
+            const useImageBtn = document.getElementById('useImageBtn');
+            
+            let stream = null;
+            let deviceId = null;
+            let availableCameras = [];
+            let currentCameraIndex = 0;
+            let canvas = document.createElement('canvas');
+            let capturedImageBlob = null;
+            
+            // カメラモーダルが開かれたときにカメラを初期化
+            cameraModal.addEventListener('shown.bs.modal', initializeCamera);
+            
+            // カメラモーダルが閉じられたときにカメラストリームを停止
+            cameraModal.addEventListener('hidden.bs.modal', stopCameraStream);
+            
+            // カメラ初期化関数
+            async function initializeCamera() {
+                captureResult.classList.add('d-none');
+                
+                try {
+                    // 利用可能なカメラデバイスを取得
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    availableCameras = devices.filter(device => device.kind === 'videoinput');
+                    
+                    // カメラ選択ドロップダウンを更新
+                    cameraSelect.innerHTML = '';
+                    availableCameras.forEach((camera, index) => {
+                        const option = document.createElement('option');
+                        option.value = camera.deviceId;
+                        option.text = camera.label || `カメラ ${index + 1}`;
+                        cameraSelect.appendChild(option);
+                    });
+                    
+                    // 最初のカメラを選択
+                    if (availableCameras.length > 0) {
+                        deviceId = availableCameras[0].deviceId;
+                        startCamera();
+                    }
+                } catch (error) {
+                    console.error('カメラの初期化エラー:', error);
+                    alert('カメラへのアクセスに失敗しました。ブラウザの設定でカメラへのアクセスを許可してください。');
+                }
+            }
+            
+            // カメラ起動関数
+            async function startCamera() {
+                if (stream) {
+                    stopCameraStream();
+                }
+                
+                try {
+                    // カメラストリームを取得
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            deviceId: deviceId ? {exact: deviceId} : undefined,
+                            width: {ideal: 1920},
+                            height: {ideal: 1080}
+                        }
+                    });
+                    
+                    // ビデオ要素にストリームを設定
+                    cameraView.srcObject = stream;
+                } catch (error) {
+                    console.error('カメラの起動エラー:', error);
+                    alert('カメラの起動に失敗しました。');
+                }
+            }
+            
+            // カメラ停止関数
+            function stopCameraStream() {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+                cameraView.srcObject = null;
+            }
+            
+            // カメラ切り替え
+            switchCameraBtn.addEventListener('click', function() {
+                if (availableCameras.length <= 1) return;
+                
+                currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+                deviceId = availableCameras[currentCameraIndex].deviceId;
+                cameraSelect.value = deviceId;
+                startCamera();
+            });
+            
+            // カメラ選択変更時
+            cameraSelect.addEventListener('change', function() {
+                deviceId = this.value;
+                currentCameraIndex = availableCameras.findIndex(camera => camera.deviceId === deviceId);
+                startCamera();
+            });
+            
+            // 撮影ボタンクリック時
+            captureBtn.addEventListener('click', function() {
+                if (!stream) return;
+                
+                // キャンバスを設定
+                canvas.width = cameraView.videoWidth;
+                canvas.height = cameraView.videoHeight;
+                
+                // ビデオフレームをキャンバスに描画
+                const context = canvas.getContext('2d');
+                context.drawImage(cameraView, 0, 0, canvas.width, canvas.height);
+                
+                // キャンバスから画像データを取得
+                canvas.toBlob(function(blob) {
+                    capturedImageBlob = blob;
+                    capturedImage.src = URL.createObjectURL(blob);
+                    captureResult.classList.remove('d-none');
+                }, 'image/jpeg', 0.9);
+            });
+            
+            // 再撮影ボタンクリック時
+            retakeBtn.addEventListener('click', function() {
+                captureResult.classList.add('d-none');
+                URL.revokeObjectURL(capturedImage.src);
+                capturedImageBlob = null;
+            });
+            
+            // 画像使用ボタンクリック時
+            useImageBtn.addEventListener('click', function() {
+                if (!capturedImageBlob) return;
+                
+                // 撮影した画像からFileオブジェクトを作成
+                const fileName = `camera_capture_${new Date().getTime()}.jpg`;
+                const capturedFile = new File([capturedImageBlob], fileName, {type: 'image/jpeg'});
+                
+                // 画像をBase64エンコードしてフォームフィールドに設定
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    // Base64エンコードされた画像データを取得
+                    const base64data = reader.result;
+                    // 隠しフィールドに設定
+                    document.getElementById('imageDataField').value = base64data;
+                    
+                    // ファイル選択フォームは空にしておく（競合を避けるため）
+                    fileInput.value = '';
+                    if (fileInput.files) {
+                        const dataTransfer = new DataTransfer();
+                        fileInput.files = dataTransfer.files;
+                    }
+                    
+                    // プレビュー表示を更新
+                    previewImage.src = URL.createObjectURL(capturedFile);
+                    fileInfo.textContent = `ファイル名: ${fileName} (カメラでキャプチャした画像)`;
+                    uploadArea.classList.add('d-none');
+                    previewContainer.classList.remove('d-none');
+                };
+                reader.readAsDataURL(capturedFile);
+                
+                // モーダルを閉じる
+                const cameraModalInstance = bootstrap.Modal.getInstance(cameraModal);
+                cameraModalInstance.hide();
+            });
+            
+            // ファイルサイズのフォーマット関数
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
         });
     </script>

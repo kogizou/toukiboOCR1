@@ -1,902 +1,1766 @@
-"""
-登記簿OCRアプリ - OCR機能実装
-
-このスクリプトは登記簿OCRアプリのコアとなるOCR機能を実装します。
-テッセラクトOCRエンジンを使用して、登記簿のスキャン画像からテキストを抽出し、
-構造化データに変換する機能を提供します。
-"""
-
-import os
-import sys
-import cv2
-import numpy as np
-import pytesseract
-from PIL import Image
-import pandas as pd
+# -*- coding: utf-8 -*-
 import re
+import os
 import json
-from datetime import datetime
 import logging
-# PDF対応のためのライブラリを追加
+import numpy as np
+import cv2
+import pytesseract
+from datetime import datetime
+from PIL import Image
+import time
+import hashlib
+import sys
 import tempfile
-try:
-    import fitz  # PyMuPDF
-    PDF_SUPPORT = True
-except ImportError:
-    PDF_SUPPORT = False
-    logging.warning("PyMuPDF not installed. PDF support will be disabled.")
+import subprocess
+import shutil
 
-# Tesseractインストール確認
-try:
-    # テスト実行
-    pytesseract.get_tesseract_version()
-    TESSERACT_AVAILABLE = True
-except Exception as e:
-    TESSERACT_AVAILABLE = False
-    logging.warning(f"Tesseract not available: {str(e)}. OCR functionality will be limited.")
-
-# ロギングの設定
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("ocr_log.txt"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger('RegistryOCR')
+# ロガーの設定
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
 class RegistryOCR:
     """登記簿OCR処理のメインクラス"""
     
     def __init__(self, config=None):
         """
-        初期化メソッド
+        登記簿OCRエンジンの初期化
         
         Args:
-            config (dict, optional): 設定情報を含む辞書。デフォルトはNone。
+            config (dict, optional): OCRの設定。指定がない場合はデフォルト設定を使用。
         """
-        # デフォルト設定
-        self.default_config = {
+        self.config = {
             'lang': 'jpn',  # 日本語
-            'tesseract_cmd': 'tesseract',  # Tesseractコマンドのパス
-            'temp_dir': './temp',  # 一時ファイル保存ディレクトリ
-            'output_dir': './output',  # 出力ディレクトリ
-            'confidence_threshold': 70,  # 信頼度閾値（%）
-            'dpi': 300,  # DPI設定
-            'psm': 6,  # ページセグメンテーションモード
-            'oem': 3,  # OCRエンジンモード
+            'dpi': 300,     # OCRのDPI設定
+            'psm': 6,       # ページセグメンテーションモード（PSM）
+            'oem': 3,       # OCRエンジンモード（OEM）
+            'config': '--tessdata-dir "tessdata"'  # Tesseractの設定
         }
         
-        # 設定の初期化
-        self.config = self.default_config.copy()
         if config:
             self.config.update(config)
         
-        # Tesseractのパス設定
-        # Mac環境でのTesseractパスの可能性
-        mac_tesseract_paths = [
-            '/usr/local/bin/tesseract',
-            '/opt/homebrew/bin/tesseract',
-            '/usr/bin/tesseract',
-            # ユーザーインストールパス
-            os.path.expanduser('~/bin/tesseract'),
-            # アプリケーションパス
-            '/Applications/Tesseract.app/Contents/MacOS/tesseract'
+        # Tesseractのパスを設定
+        if sys.platform.startswith('win'):
+            pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+        
+        # 一時ディレクトリの作成
+        self.temp_dir = self.config['temp_dir']
+        self.output_dir = self.config['output_dir']
+        os.makedirs(self.temp_dir, exist_ok=True)
+        os.makedirs(self.output_dir, exist_ok=True)
+        
+        # Tesseractのデータディレクトリ
+        self.tesseract_data_path = '/usr/local/share/tessdata'
+        if not os.path.exists(self.tesseract_data_path):
+            self.tesseract_data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tessdata')
+            os.makedirs(self.tesseract_data_path, exist_ok=True)
+        
+        logger.info("RegistryOCR initialized with config: %s", json.dumps(self.config, ensure_ascii=False))
+        
+        # 必要なライブラリの存在確認
+        self._check_dependencies()
+        
+        # ログ設定
+        self.logger = logging.getLogger('registry_ocr')
+        if not self.logger.handlers:
+            self.logger.setLevel(logging.INFO)
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+
+    def _optimize_tesseract_config(self, document_type=None):
+        """
+        ドキュメントタイプに基づいてTesseractの設定文字列を生成する
+        
+        Args:
+            document_type (str, optional): テキストの向き ('vertical' または 'horizontal')
+            
+        Returns:
+            str: Tesseractの設定文字列
+        """
+        # 基本設定
+        lang = self.config.get('lang', 'jpn')
+        psm = self.config.get('psm', 6)
+        oem = self.config.get('oem', 3)
+        
+        # テキストの向きに応じて設定を調整
+        if document_type == "vertical":
+            # 縦書きテキスト用の設定
+            lang = f"{lang}+jpn_vert"
+            psm = 5  # 単一の縦書きテキストブロック
+            config = f'--psm {psm} --oem {oem} -l {lang}'
+            config += ' --tessdata-dir "/usr/local/share/tessdata"'
+            config += ' -c preserve_interword_spaces=1 -c textord_tabfind_vertical_text=1'
+            config += ' -c textord_tabfind_force_vertical_text=1'
+        elif document_type == "horizontal":
+            # 横書きテキスト用の設定
+            psm = 6  # 単一の横書きテキストブロック
+            config = f'--psm {psm} --oem {oem} -l {lang}'
+            config += ' --tessdata-dir "/usr/local/share/tessdata"'
+            config += ' -c preserve_interword_spaces=1'
+        else:
+            # 自動検出モード
+            psm = 3  # 自動ページセグメンテーション
+            config = f'--psm {psm} --oem {oem} -l {lang}'
+            config += ' --tessdata-dir "/usr/local/share/tessdata"'
+            config += ' -c preserve_interword_spaces=1 -c textord_tabfind_vertical_text=1'
+        
+        # 日本語に最適化した文字セット（許可する文字）
+        config += ' -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポヴッ々〆ー・「」。、（）～￥[]{}:：""\'\'＜＞〒♯＆@＠/／|｜一二三四五六七八九十百千万億兆京年月日時分秒'
+        
+        # 文字認識の精度向上のための追加設定
+        config += ' -c language_model_penalty_non_dict_word=0.8'
+        config += ' -c language_model_penalty_non_freq_dict_word=0.6'
+        
+        return config
+
+    def _detect_document_type(self, text):
+        """
+        OCRで認識されたテキストから文書タイプを自動検出する
+        
+        Args:
+            text (str): OCRで認識されたテキスト
+            
+        Returns:
+            str: 検出された文書タイプ（'registry', 'certificate', 'mixed', 'vertical', 'other'）
+        """
+        if not text or len(text) < 20:
+            return 'other'  # テキストが短すぎる場合は判断できない
+            
+        # 登記簿関連のキーワード
+        registry_keywords = [
+            '登記簿', '謄本', '登記事項', '甲区', '乙区', '土地', '建物', 
+            '所有権', '権利者', '順位', '登記原因', '共同担保', '抵当権', 
+            '根抵当権', '債権額', '持分', '地番', '不動産番号'
         ]
         
-        # 環境に応じたパス設定
-        if os.name == 'nt':  # Windows
-            pytesseract.pytesseract.tesseract_cmd = self.config['tesseract_cmd']
-        elif os.name == 'posix':  # MacやLinux
-            # 既存のパスが有効かチェック
-            if os.path.isfile(self.config['tesseract_cmd']) and os.access(self.config['tesseract_cmd'], os.X_OK):
-                pytesseract.pytesseract.tesseract_cmd = self.config['tesseract_cmd']
+        # 権利証関連のキーワード
+        certificate_keywords = [
+            '権利証', '所有権', '登記済証', '登記完了証', '証明書',
+            '登記官', '印鑑証明', '印鑑登録'
+        ]
+        
+        # 縦書きのパターンを検出（縦に並んだ句読点などを検出）
+        vertical_patterns = [
+            r'[\u3001\u3002\uff0c\uff0e]{2,}',  # 複数の句読点が縦に並ぶパターン
+            r'([\u4e00-\u9faf\u3040-\u309f\u30a0-\u30ff])\s+\1',  # 同じ文字が縦に並ぶパターン
+        ]
+        
+        # スコアリングによる文書タイプ判定
+        registry_score = sum(1 for kw in registry_keywords if kw in text)
+        certificate_score = sum(1 for kw in certificate_keywords if kw in text)
+        vertical_score = 0
+        
+        # 縦書きパターンの検出
+        import re
+        for pattern in vertical_patterns:
+            if re.search(pattern, text):
+                vertical_score += 1
+                
+        # 甲区/乙区のパターンを検出（登記簿の特徴的な構造）
+        if re.search(r'甲区.+乙区', text, re.DOTALL) or re.search(r'所有権.+担保', text, re.DOTALL):
+            registry_score += 3
+        
+        # 表のパターンを検出
+        if re.search(r'[-─|｜]{3,}', text):
+            registry_score += 1
+            
+        # 日付のパターンを検出（登記関連文書の特徴）
+        date_patterns = [
+            r'(平成|令和|昭和)(\d{1,2})年(\d{1,2})月(\d{1,2})日',
+            r'\d{4}年\d{1,2}月\d{1,2}日',
+            r'\d{4}/\d{1,2}/\d{1,2}'
+        ]
+        for pattern in date_patterns:
+            if re.search(pattern, text):
+                registry_score += 1
+                certificate_score += 1
+        
+        # 所有権/抵当権の詳細パターンを検出
+        if re.search(r'所有権.*登記原因.*', text, re.DOTALL):
+            registry_score += 2
+            
+        if re.search(r'抵当権.*債権額.*', text, re.DOTALL):
+            registry_score += 2
+            
+        self.logger.debug(f"文書タイプスコア - 登記簿: {registry_score}, 権利証: {certificate_score}, 縦書き: {vertical_score}")
+            
+        # スコアに基づいて文書タイプを判定
+        if registry_score >= 3:
+            if vertical_score >= 1:
+                return 'registry'  # 縦書きの登記簿
             else:
-                # Mac環境での可能性のあるパスをチェック
-                for path in mac_tesseract_paths:
-                    if os.path.isfile(path) and os.access(path, os.X_OK):
-                        pytesseract.pytesseract.tesseract_cmd = path
-                        self.config['tesseract_cmd'] = path
-                        logging.info(f"Found Tesseract at: {path}")
-                        break
-        
-        # 一時ディレクトリと出力ディレクトリの作成
-        os.makedirs(self.config['temp_dir'], exist_ok=True)
-        os.makedirs(self.config['output_dir'], exist_ok=True)
-        
-        # 登記簿の構造定義（正規表現パターン）
-        self.patterns = {
-            'property_number': r'不動産番号[：:]\s*(\d{4}[-－]\d{4}[-－]\d{4})',
-            'address': r'所\s*在\s*(.+[都道府県].+[市区町村].+)',
-            'lot_number': r'地\s*番\s*(.+)',
-            'area': r'地\s*積\s*([0-9０-９,.，．]+)\s*([平方メートル㎡])',
-            'owner_name': r'名\s*義\s*人\s*(.+)',
-            'owner_address': r'住\s*所\s*(.+)',
-            'rights': r'権\s*利\s*者\s*(.+)'
-        }
-        
-        logger.info("RegistryOCR initialized with config: %s", self.config)
-    
-    def preprocess_image(self, image_path):
+                return 'registry'  # 横書きの登記簿（まれ）
+        elif certificate_score >= 2:
+            return 'certificate'  # 権利証
+        elif vertical_score >= 1:
+            return 'vertical'  # 縦書き文書（登記簿や権利証の特徴が少ない）
+        elif registry_score >= 1 or certificate_score >= 1:
+            return 'mixed'  # 登記関連だが種類が明確でない
+        else:
+            return 'other'  # その他の文書
+
+    def _validate_and_enhance_data(self, data):
         """
-        画像の前処理を行う
+        OCRで抽出されたデータを検証し、適切な形式に強化する
+        
+        Args:
+            data (dict): 検証および強化する構造化データ
+            
+        Returns:
+            dict: 検証および強化された構造化データ
+        """
+        logger.info("データの検証と強化を開始します")
+        
+        if not data:
+            return {}
+            
+        # 空の値をNoneに変換
+        data = self._clean_empty_values(data)
+        
+        # 物件番号の検証と修正
+        if 'property_number' in data and data['property_number']:
+            # 物件番号のフォーマットをチェック（例：YYYY-XXXX-XXXX）
+            pattern = r'^\d{4}-\d{4}-\d{4}$'
+            if not re.match(pattern, data['property_number']):
+                # フォーマットが正しくない場合、修正を試みる
+                # 数字のみを抽出
+                digits = re.findall(r'\d', data['property_number'])
+                if len(digits) >= 12:
+                    # 12桁以上ある場合、フォーマットを修正
+                    formatted = ''.join(digits[:4]) + '-' + ''.join(digits[4:8]) + '-' + ''.join(digits[8:12])
+                    logger.info(f"物件番号のフォーマットを修正しました: {data['property_number']} -> {formatted}")
+                    data['property_number'] = formatted
+                else:
+                    logger.warning(f"物件番号のフォーマットが不正で修正できません: {data['property_number']}")
+        
+        # 面積の数値への変換と丸め
+        if 'area' in data and data['area']:
+            try:
+                if isinstance(data['area'], str):
+                    # カンマを削除し、数値に変換
+                    area_str = data['area'].replace(',', '')
+                    # 数値部分を抽出（単位などを除去）
+                    number_match = re.search(r'(\d+\.?\d*)', area_str)
+                    if number_match:
+                        area_value = float(number_match.group(1))
+                        # 小数点以下2桁に丸める
+                        data['area'] = round(area_value, 2)
+                elif isinstance(data['area'], (int, float)):
+                    data['area'] = round(float(data['area']), 2)
+            except (ValueError, TypeError) as e:
+                logger.warning(f"面積の変換中にエラーが発生しました: {str(e)}")
+                data['area'] = None
+        
+        # 権利情報の強化
+        if 'rights' in data and data['rights']:
+            for i, right in enumerate(data['rights']):
+                # 日付のフォーマット統一
+                if 'date' in right and right['date']:
+                    try:
+                        # 日付形式の検証と変換
+                        date_str = right['date']
+                        # 和暦から西暦への変換などの処理も必要に応じて追加
+                    except Exception as e:
+                        logger.warning(f"権利情報の日付変換中にエラーが発生しました: {str(e)}")
+                
+                # 金額の数値変換
+                if 'amount' in right and right['amount']:
+                    try:
+                        if isinstance(right['amount'], str):
+                            # カンマや通貨記号を削除
+                            amount_str = right['amount'].replace(',', '').replace('¥', '').replace('円', '')
+                            # 数値部分を抽出
+                            number_match = re.search(r'(\d+)', amount_str)
+                            if number_match:
+                                right['amount'] = int(number_match.group(1))
+                    except (ValueError, TypeError) as e:
+                        logger.warning(f"金額の変換中にエラーが発生しました: {str(e)}")
+        
+        logger.info("データの検証と強化が完了しました")
+        return data
+
+    def _clean_empty_values(self, data_dict):
+        """辞書内の空の値をNoneに変換する（再帰的）
+        
+        Args:
+            data_dict (dict): 処理する辞書
+            
+        Returns:
+            dict: 処理後の辞書
+        """
+        if not isinstance(data_dict, dict):
+            return data_dict
+            
+        result = {}
+        for key, value in data_dict.items():
+            if isinstance(value, dict):
+                result[key] = self._clean_empty_values(value)
+            elif isinstance(value, list):
+                if not value:
+                    result[key] = None
+                else:
+                    # リスト内の辞書も処理
+                    new_list = []
+                    for item in value:
+                        if isinstance(item, dict):
+                            new_list.append(self._clean_empty_values(item))
+                        else:
+                            new_list.append(item)
+                    result[key] = new_list
+            elif isinstance(value, str) and value.strip() == '':
+                result[key] = None
+            else:
+                result[key] = value
+                
+        return result
+
+    def process_image(self, image_path):
+        """
+        画像ファイルを処理してテキストを抽出し、構造化データを返す
         
         Args:
             image_path (str): 処理する画像のパス
             
         Returns:
-            numpy.ndarray: 前処理された画像
+            tuple: (構造化データ辞書, 信頼度スコア, 抽出テキスト)
         """
-        logger.info("Processing image: %s", image_path)
+        self.logger.info(f"画像処理開始: {image_path}")
+        start_time = time.time()
         
-        # PDFファイルの処理
-        if image_path.lower().endswith('.pdf'):
-            if not PDF_SUPPORT:
-                raise ValueError("PDFサポートが無効です。PyMuPDFライブラリをインストールしてください。")
-            
-            try:
-                # PDFから画像に変換
-                logger.info("Converting PDF to image: %s", image_path)
-                temp_dir = tempfile.mkdtemp(dir=self.config['temp_dir'])
-                
-                # PyMuPDFでPDFを開く
-                pdf_document = fitz.open(image_path)
-                
-                if len(pdf_document) == 0:
-                    raise ValueError(f"PDFにページが含まれていません: {image_path}")
-                
-                # 最初のページを取得（インデックスは0から始まる）
-                pdf_page = pdf_document[0]
-                
-                # ページを画像として取得 (高解像度用に設定)
-                zoom_factor = self.config['dpi'] / 72 * 1.5  # 高解像度化（1.5倍）
-                matrix = fitz.Matrix(zoom_factor, zoom_factor)
-                pix = pdf_page.get_pixmap(matrix=matrix, alpha=False)
-                
-                # 一時画像ファイルとして保存
-                temp_image_path = os.path.join(temp_dir, "pdf_page_1.png")
-                pix.save(temp_image_path)
-                logger.info("PDF converted to image: %s", temp_image_path)
-                
-                # 変換された画像を読み込み
-                image = cv2.imread(temp_image_path)
-                if image is None:
-                    raise ValueError(f"変換されたPDF画像を読み込めませんでした: {temp_image_path}")
-                
-                # 使用後にPDFを閉じる
-                pdf_document.close()
-            except Exception as e:
-                logger.error("PDF変換中にエラーが発生しました: %s", str(e), exc_info=True)
-                raise ValueError(f"PDF変換中にエラーが発生しました: {str(e)}")
-        else:
-            # 通常の画像ファイルの処理
-            image = cv2.imread(image_path)
-            if image is None:
-                raise ValueError(f"画像を読み込めませんでした: {image_path}")
-        
-        # 画像のDPI調整
-        image_height, image_width = image.shape[:2]
-        current_dpi = max(image_width, image_height) / 8.5  # A4用紙を想定
-        scale_factor = self.config['dpi'] / current_dpi if current_dpi > 0 else 1
-        
-        if scale_factor != 1:
-            logger.info("Resizing image with scale factor: %f", scale_factor)
-            image = cv2.resize(image, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_CUBIC)
-        
-        # デバッグ用：元画像を保存
-        original_debug_path = os.path.join(self.config['temp_dir'], 'debug_original.png')
-        cv2.imwrite(original_debug_path, image)
-        
-        # グレースケール変換
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        
-        # 傾き検出を改善（特に縦書きの日本語テキスト向け）
         try:
-            # より堅牢な傾き検出のためHough変換を使用
-            edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-            lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, minLineLength=100, maxLineGap=10)
+            # 画像が存在するか確認
+            if not os.path.exists(image_path):
+                self.logger.error(f"画像ファイルが見つかりません: {image_path}")
+                return {}, 0.0, ""
             
-            if lines is not None and len(lines) > 0:
-                angles = []
-                for line in lines:
-                    x1, y1, x2, y2 = line[0]
-                    if x2 - x1 != 0:  # 垂直線を避ける
-                        angle = np.arctan((y2 - y1) / (x2 - x1)) * 180 / np.pi
-                        angles.append(angle)
+            # 1. 画像の前処理強化（新機能）
+            if self.config.get('enhance_preprocessing', True):
+                try:
+                    enhanced_image_path = self.enhance_image(image_path)
+                    self.logger.info(f"強化前処理を適用しました: {enhanced_image_path}")
+                    image_path = enhanced_image_path
+                except Exception as e:
+                    self.logger.warning(f"画像強化処理に失敗しました。標準処理を続行します: {str(e)}")
+            
+            # 2. 画像の読み込み
+            try:
+                image = cv2.imread(image_path)
+                if image is None:
+                    # PILで試みる
+                    image = np.array(Image.open(image_path))
+                    # BGR形式に変換（OpenCV標準）
+                    if len(image.shape) == 3 and image.shape[2] == 3:
+                        image = image[:, :, ::-1]
+            except Exception as e:
+                self.logger.error(f"画像読み込みエラー: {str(e)}")
+                return {}, 0.0, ""
                 
-                if angles:
-                    # 最も頻度の高い角度を取得（ヒストグラムのピーク）
-                    angle_counts = {}
-                    for angle in angles:
-                        # 0.5度単位で丸める
-                        rounded = round(angle * 2) / 2
-                        if rounded in angle_counts:
-                            angle_counts[rounded] += 1
-                        else:
-                            angle_counts[rounded] = 1
-                    
-                    # 最頻値の角度を取得
-                    angle = max(angle_counts.items(), key=lambda x: x[1])[0]
-                    
-                    if abs(angle) > 0.5:  # 0.5度以上の傾きがある場合のみ補正
-                        logger.info("Correcting image skew using Hough transform: %f degrees", angle)
-                        (h, w) = gray.shape[:2]
-                        center = (w // 2, h // 2)
-                        M = cv2.getRotationMatrix2D(center, angle, 1.0)
-                        gray = cv2.warpAffine(gray, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
-            else:
-                # Hough変換が失敗した場合、従来の方法を試す
-                coords = np.column_stack(np.where(gray > 0))
-                angle = cv2.minAreaRect(coords)[-1]
+            # 3. 文書の向き検出
+            orientation = "vertical" if self._is_vertical_text(image) and self.config.get('detect_orientation', True) else "horizontal"
+            self.logger.info(f"検出されたテキスト方向: {orientation}")
+            
+            # 4. OCR設定の最適化
+            custom_config = self._optimize_tesseract_config(
+                "vertical" if orientation == "vertical" else "horizontal"
+            )
+            
+            # 日本語最適化設定の適用
+            if self.config.get('optimize_japanese', True):
+                custom_config += ' -c textord_tablefind_recognize_tables=0'
+                custom_config += ' -c textord_tabfind_vertical_text=1' if orientation == "vertical" else ''
+                custom_config += ' -c language_model_ngram_on=1'
+                custom_config += ' -c language_model_ngram_space_delimited_language=0'
                 
-                if angle < -45:
-                    angle = -(90 + angle)
-                else:
-                    angle = -angle
-                    
-                if abs(angle) > 0.5:  # 0.5度以上の傾きがある場合のみ補正
-                    logger.info("Correcting image skew using minAreaRect: %f degrees", angle)
-                    (h, w) = gray.shape[:2]
-                    center = (w // 2, h // 2)
-                    M = cv2.getRotationMatrix2D(center, angle, 1.0)
-                    gray = cv2.warpAffine(gray, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+            # Tesseract OCRの設定をセット
+            ocr_config = {
+                'lang': self.config.get('lang', 'jpn'),
+                'config': custom_config,
+                'dpi': self.config.get('dpi', 300)
+            }
+            
+            # 5. OCRテキスト抽出
+            self.logger.info(f"OCR実行中... 設定: {custom_config}")
+            
+            # 5.1 画像をメモリに展開
+            is_success, im_buf_arr = cv2.imencode(".png", image)
+            byte_im = im_buf_arr.tobytes()
+            
+            # 5.2 PyTesseractでOCR実行
+            from io import BytesIO
+            ocr_text = pytesseract.image_to_string(
+                Image.open(BytesIO(byte_im)),
+                lang=ocr_config['lang'],
+                config=ocr_config['config']
+            )
+            
+            # OCRテキストが空の場合はエラー
+            if not ocr_text or ocr_text.strip() == "":
+                self.logger.warning("OCRテキストが空です。別の前処理方法を試みます。")
+                # 別の前処理方法を試す（PSMを変更して再試行）
+                alt_config = custom_config.replace('--psm 6', '--psm 3').replace('--psm 5', '--psm 4')
+                ocr_text = pytesseract.image_to_string(
+                    Image.open(BytesIO(byte_im)),
+                    lang=ocr_config['lang'],
+                    config=alt_config
+                )
+                
+                if not ocr_text or ocr_text.strip() == "":
+                    self.logger.error("OCRテキスト抽出失敗")
+                    return {}, 0.0, ""
+            
+            # 6. 文書タイプの検出
+            document_type = self._detect_document_type(ocr_text)
+            self.logger.info(f"検出された文書タイプ: {document_type}")
+            
+            # 7. テキストの後処理
+            processed_text = self._postprocess_text(ocr_text, document_type)
+            
+            # 8. 構造化データの抽出
+            structured_data = self.extract_structured_data(processed_text)
+            
+            # 9. 信頼度の計算
+            confidence = self._calculate_confidence(structured_data)
+            
+            # 10. データの検証と拡張
+            validated_data = self._validate_and_enhance_data(structured_data)
+            
+            # 処理時間の記録
+            processing_time = time.time() - start_time
+            self.logger.info(f"画像処理完了: {processing_time:.2f}秒, 信頼度: {confidence:.2f}")
+            
+            # 結果をキャッシュに保存（オプション）
+            try:
+            self._save_to_cache(image_path, validated_data, confidence, processed_text)
+            except:
+                pass  # キャッシュエラーは無視
+            
+            return validated_data, confidence, processed_text
+            
         except Exception as e:
-            logger.warning("Failed to correct image skew: %s", str(e))
-        
-        # コントラスト強調（アダプティブヒストグラム平坦化）
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        gray = clahe.apply(gray)
-        
-        # ノイズ除去の強化
-        # まず、バイラテラルフィルタでエッジを保存しながらノイズ除去
-        gray = cv2.bilateralFilter(gray, 11, 75, 75)
-        
-        # 適応的二値化（局所的な照明条件に対応）
-        binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                                      cv2.THRESH_BINARY_INV, 15, 2)
-        
-        # 反転して通常の二値化に戻す（テキストが黒、背景が白）
-        binary = cv2.bitwise_not(binary)
-        
-        # モルフォロジー演算でノイズ除去と文字の補強
-        # 小さなノイズを除去
-        kernel = np.ones((2, 2), np.uint8)
-        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, iterations=1)
-        
-        # 文字の連結部分を補強
-        kernel = np.ones((1, 1), np.uint8)
-        binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, iterations=1)
-        
-        # 登記簿特有の縦線・横線を除去
-        # 水平方向のノイズ（横線）の検出と除去
-        horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (40, 1))
-        horizontal_lines = cv2.morphologyEx(binary, cv2.MORPH_OPEN, horizontal_kernel, iterations=2)
-        binary = cv2.subtract(binary, horizontal_lines)
-        
-        # 垂直方向のノイズ（縦線）の検出と除去
-        vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 40))
-        vertical_lines = cv2.morphologyEx(binary, cv2.MORPH_OPEN, vertical_kernel, iterations=2)
-        binary = cv2.subtract(binary, vertical_lines)
-        
-        # エッジ検出と強調を追加して文字の境界を明確に
-        edges = cv2.Canny(gray, 100, 200)
-        binary = cv2.bitwise_or(binary, edges)
-        
-        # 結果を一時ファイルとして保存（デバッグ用）
-        debug_path = os.path.join(self.config['temp_dir'], 'debug_preprocess.png')
-        cv2.imwrite(debug_path, binary)
-        logger.info("Preprocessed image saved to: %s", debug_path)
-        
-        # 登記簿で特に重要な区域を検出するために別のデバッグ画像も生成
-        debug_clahe_path = os.path.join(self.config['temp_dir'], 'debug_clahe.png')
-        cv2.imwrite(debug_clahe_path, gray)
-        
-        debug_edges_path = os.path.join(self.config['temp_dir'], 'debug_edges.png')
-        cv2.imwrite(debug_edges_path, edges)
-        
-        return binary
-    
-    def detect_table_structure(self, image):
+            self.logger.error(f"画像処理中にエラーが発生しました: {str(e)}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            return {}, 0.0, ""
+            
+    def _is_vertical_text(self, image):
         """
-        画像内のテーブル構造を検出する
+        画像内のテキストが縦書きかどうかを検出する
         
         Args:
-            image (numpy.ndarray): 処理する画像
+            image: 前処理済み画像
             
         Returns:
-            list: 検出されたテーブルの座標リスト
+            bool: 縦書きの場合True、横書きの場合False
         """
-        # 水平・垂直線の検出
-        horizontal = np.copy(image)
-        vertical = np.copy(image)
+        # グレースケールに変換
+        if len(image.shape) == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image
+            
+        # エッジ検出
+        edges = cv2.Canny(gray, 50, 150, apertureSize=3)
         
-        # 画像の幅と高さを取得
-        img_height, img_width = horizontal.shape
+        # ハフ変換で直線検出
+        lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=100, minLineLength=100, maxLineGap=10)
         
-        # 水平線の検出
-        horizontal_size = int(img_width / 30)
-        horizontalStructure = cv2.getStructuringElement(cv2.MORPH_RECT, (horizontal_size, 1))
-        horizontal = cv2.erode(horizontal, horizontalStructure)
-        horizontal = cv2.dilate(horizontal, horizontalStructure)
+        if lines is None or len(lines) == 0:
+            return False
+            
+        # 水平線と垂直線のカウント
+        horizontal_count = 0
+        vertical_count = 0
         
-        # 垂直線の検出
-        vertical_size = int(img_height / 30)
-        verticalStructure = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vertical_size))
-        vertical = cv2.erode(vertical, verticalStructure)
-        vertical = cv2.dilate(vertical, verticalStructure)
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            # 線の角度を計算
+            angle = np.abs(np.arctan2(y2 - y1, x2 - x1) * 180 / np.pi)
+            
+            # 水平線: 角度が0-30度または150-180度
+            if angle < 30 or angle > 150:
+                horizontal_count += 1
+            # 垂直線: 角度が60-120度
+            elif 60 < angle < 120:
+                vertical_count += 1
+                
+        # 垂直線が水平線より多ければ縦書きと判断
+        is_vertical = vertical_count > horizontal_count
+        self.logger.debug(f"縦書き検出: 垂直線={vertical_count}, 水平線={horizontal_count}, 判定={is_vertical}")
         
-        # 水平線と垂直線の交点を検出
-        mask = horizontal + vertical
+        return is_vertical
         
-        # 輪郭検出
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    def _save_to_cache(self, image_path, data, confidence, text):
+        """
+        処理結果をキャッシュに保存する
         
-        # テーブルセルの座標を取得
-        table_cells = []
-        for contour in contours:
-            x, y, w, h = cv2.boundingRect(contour)
-            if w > 20 and h > 20:  # 小さすぎるセルは除外
-                table_cells.append((x, y, w, h))
+        Args:
+            image_path (str): 画像ファイルパス
+            data (dict): 構造化データ
+            confidence (float): 信頼度スコア
+            text (str): 抽出テキスト
+        """
+        if not self.enable_cache:
+            return
+            
+        try:
+            # ファイル名からキャッシュキーを生成
+            cache_key = hashlib.md5(image_path.encode()).hexdigest()
+            
+            # キャッシュデータの作成
+            cache_data = {
+                "image_path": image_path,
+                "processed_at": datetime.datetime.now().isoformat(),
+                "structured_data": data,
+                "confidence": confidence,
+                "text": text
+            }
+            
+            # キャッシュディレクトリの確認と作成
+            os.makedirs(self.cache_dir, exist_ok=True)
+            
+            # キャッシュファイルに保存
+            cache_file = os.path.join(self.cache_dir, f"{cache_key}.json")
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                json.dump(cache_data, f, ensure_ascii=False, indent=2)
+                
+            self.logger.debug(f"キャッシュに保存しました: {cache_file}")
+            
+        except Exception as e:
+            self.logger.warning(f"キャッシュへの保存に失敗しました: {str(e)}")
+
+    def _postprocess_text(self, text, document_type='registry'):
+        """
+        OCRで認識されたテキストを後処理して品質を向上させる
         
-        return table_cells
-    
-    def extract_text(self, image, lang='jpn'):
+        Args:
+            text (str): OCRで認識されたテキスト
+            document_type (str): 文書タイプ ('registry', 'certificate', 'mixed', 'vertical', 'other')
+            
+        Returns:
+            str: 後処理されたテキスト
+        """
+        if not text:
+            return text
+            
+        import re
+        
+        # 1. 余分な空白の削除・正規化
+        text = re.sub(r'\s+', ' ', text)  # 連続する空白を1つに圧縮
+        text = re.sub(r'^\s+|\s+$', '', text, flags=re.MULTILINE)  # 各行の先頭と末尾の空白を削除
+        
+        # 2. よくある誤認識の修正 (登記簿特有の文字修正)
+        common_misrecognitions = {
+            # 数字の誤認識
+            'O': '0', 'o': '0', 'l': '1', 'I': '1', 'i': '1',
+            'Z': '2', 'S': '5', 'b': '6', 'G': '6',
+            # 記号の誤認識
+            '，': ',', '．': '.', '、': ',', '。': '.',
+            # 漢字の誤認識
+            '土也': '地', '土田': '地', '已': '己', '巳': '己',
+            '未': '来', '井': '非', '甲圧': '甲区', '乙圧': '乙区',
+            # 区分所有・抵当権関連の誤認識
+            '区分所宥': '区分所有', '区分斤有': '区分所有',
+            '底当権': '抵当権', '氏当権': '抵当権', '氏当椎': '抵当権',
+            # 登記固有用語
+            '所有椎': '所有権', '所宥権': '所有権',
+            '登言己': '登記', '登言己簿': '登記簿', '言己簿': '記簿',
+            '順伯': '順位', '登言己原因': '登記原因',
+            '権利者': '権利者', '継利者': '権利者',
+            # 日付関連
+            '令禾口': '令和', '令和口': '令和', '平咸': '平成'
+        }
+        
+        for wrong, correct in common_misrecognitions.items():
+            text = text.replace(wrong, correct)
+            
+        # 3. 文書タイプ別の処理
+        if document_type in ['registry', 'mixed']:
+            # 登記簿特有の後処理
+            
+            # 数値と単位の間の空白を削除 (例: 100 円 → 100円)
+            text = re.sub(r'(\d+)\s+(円|平方メートル|㎡|m²)', r'\1\2', text)
+            
+            # 日付書式の正規化 (例: 令和 5 年 → 令和5年)
+            text = re.sub(r'(平成|令和|昭和)\s*(\d{1,2})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日', 
+                          r'\1\2年\3月\4日', text)
+            
+            # 甲区・乙区のフォーマット修正
+            text = re.sub(r'甲\s*区', '甲区', text)
+            text = re.sub(r'乙\s*区', '乙区', text)
+            
+            # 順位番号の修正 (例: 第 1 → 第1)
+            text = re.sub(r'第\s+(\d+)', r'第\1', text)
+            
+            # 住所の修正 (例: 東京 都 → 東京都)
+            prefecture_pattern = '(東京|大阪|京都|北海道|青森|岩手|宮城|秋田|山形|福島|茨城|栃木|群馬|埼玉|千葉|神奈川|新潟|富山|石川|福井|山梨|長野|岐阜|静岡|愛知|三重|滋賀|兵庫|奈良|和歌山|鳥取|島根|岡山|広島|山口|徳島|香川|愛媛|高知|福岡|佐賀|長崎|熊本|大分|宮崎|鹿児島|沖縄)'
+            text = re.sub(f'{prefecture_pattern}\\s+都', r'\1都', text)
+            text = re.sub(f'{prefecture_pattern}\\s+府', r'\1府', text)
+            text = re.sub(f'{prefecture_pattern}\\s+県', r'\1県', text)
+            
+            # 住所の丁目・番地・号の修正
+            text = re.sub(r'(\d+)\s*丁目', r'\1丁目', text)
+            text = re.sub(r'(\d+)\s*番地?\s*(\d+)\s*号', r'\1番\2号', text)
+            text = re.sub(r'(\d+)\s*番\s*(\d+)', r'\1番\2', text)
+            
+        elif document_type == 'certificate':
+            # 権利証特有の後処理
+            # 認証番号の修正 (例: 第 123456 号 → 第123456号)
+            text = re.sub(r'第\s+([0-9A-Z]+)\s+号', r'第\1号', text)
+            
+        # 4. 一般的なテキスト修正
+        
+        # 括弧の誤認識修正
+        text = re.sub(r'「', '(', text)
+        text = re.sub(r'」', ')', text)
+        
+        # カタカナの修正 (濁点・半濁点の分離修正)
+        katakana_daku = {
+            'カ゛': 'ガ', 'キ゛': 'ギ', 'ク゛': 'グ', 'ケ゛': 'ゲ', 'コ゛': 'ゴ',
+            'サ゛': 'ザ', 'シ゛': 'ジ', 'ス゛': 'ズ', 'セ゛': 'ゼ', 'ソ゛': 'ゾ',
+            'タ゛': 'ダ', 'チ゛': 'ヂ', 'ツ゛': 'ヅ', 'テ゛': 'デ', 'ト゛': 'ド',
+            'ハ゛': 'バ', 'ヒ゛': 'ビ', 'フ゛': 'ブ', 'ヘ゛': 'ベ', 'ホ゛': 'ボ',
+            'ハ゜': 'パ', 'ヒ゜': 'ピ', 'フ゜': 'プ', 'ヘ゜': 'ペ', 'ホ゜': 'ポ'
+        }
+        for wrong, correct in katakana_daku.items():
+            text = text.replace(wrong, correct)
+        
+        # 文字コード正規化 (半角カタカナを全角に、全角英数を半角に)
+        import unicodedata
+        text = unicodedata.normalize('NFKC', text)
+        
+        # 5. ドキュメント構造を考慮した修正
+        if document_type in ['registry', 'mixed']:
+            # 登記事項証明書での表区切り文字の正規化
+            text = re.sub(r'[-＝=─]{3,}', '─────────────────', text)
+            
+            # 抵当権・所有権などのセクション区切りの強調
+            for section in ['所有権', '抵当権', '根抵当権', '地上権', '賃借権']:
+                text = re.sub(f'({section})', f'\n\n{section}\n', text)
+        
+        self.logger.debug(f"テキスト後処理完了: {len(text)}文字")
+        return text
+
+    def _extract_text(self, image, orientation="vertical"):
         """
         画像からテキストを抽出する
         
         Args:
-            image (numpy.ndarray): 処理する画像
-            lang (str, optional): OCR言語。デフォルトは'jpn'。
+            image: 前処理済み画像
+            orientation (str): テキストの向き ('vertical' または 'horizontal')
             
         Returns:
             str: 抽出されたテキスト
         """
-        # Tesseractが利用可能かチェック
-        if not TESSERACT_AVAILABLE:
-            logging.warning("Tesseract not available. Returning placeholder text.")
-            # Tesseractがない場合、プレースホルダーテキストを返す
-            return """
-            Tesseractがインストールされていないため、OCR処理ができません。
-            Tesseractをインストールするか、別の方法でテキスト抽出を行ってください。
-            
-            Tesseractのインストール方法:
-            - MacOS: brew install tesseract tesseract-lang
-            - Windows: https://github.com/UB-Mannheim/tesseract/wiki からインストーラーをダウンロード
-            - Linux: apt-get install tesseract-ocr libtesseract-dev
-            
-            PDFの変換は正常に完了しています。
-            """
+        # Tesseractの設定を最適化
+        config = self._optimize_tesseract_config(orientation)
         
-        # PILイメージに変換
-        pil_image = Image.fromarray(image)
-        
-        # 登記簿向けの最適化設定
-        # --psm 6: 単一のテキストブロックとして処理（デフォルト）
-        # --psm 4: 縦書きテキストの処理が必要な場合
-        # --psm 3: 複雑なレイアウトで自動ページセグメンテーション
-        # --oem 3: LSTMエンジンのみ（精度優先）
-        # -c preserve_interword_spaces=1: 単語間のスペースを保持
-        # -c tessedit_char_whitelist: 特定の文字セットに限定する場合
-        
-        # 登記簿OCRに最適化した設定
-        config = (
-            f'--psm {self.config.get("psm", 6)} '
-            f'--oem {self.config.get("oem", 3)} '
-            f'-c preserve_interword_spaces=1 '
-            f'-c tessedit_do_invert=0 '  # 反転しない
-            f'-c textord_tabfind_find_tables=1 '  # テーブル検出
-            f'-c textord_tablefind_recognize_tables=1 '  # テーブル認識
-            f'-c language_model_ngram_on=1 '  # 言語モデル使用
-            f'-c textord_heavy_nr=1 '  # 重いノイズ除去
-            f'-c tessedit_create_hocr=1 '  # HOCRファイルを作成
-        )
-        
-        # 縦書きテキスト検出のテスト
-        # 縦書きと横書きの両方でテストし、信頼度が高い方を採用
         try:
-            # 標準（横書き）設定で抽出
-            text_h = pytesseract.image_to_string(pil_image, lang=lang, config=config)
+            # 言語設定の取得
+            lang = self.config.get('lang', 'jpn')
             
-            # 縦書き設定で抽出
-            config_v = config + ' --psm 5 -c textord_tablefind_vertical_text=1'
-            text_v = pytesseract.image_to_string(pil_image, lang=lang, config=config_v)
-            
-            # 信頼度データを取得
-            data_h = pytesseract.image_to_data(pil_image, lang=lang, config=config, output_type=pytesseract.Output.DICT)
-            data_v = pytesseract.image_to_data(pil_image, lang=lang, config=config_v, output_type=pytesseract.Output.DICT)
-            
-            # 平均信頼度を計算
-            conf_h = sum(int(x) for x in data_h['conf'] if x != '-1') / len([x for x in data_h['conf'] if x != '-1']) if [x for x in data_h['conf'] if x != '-1'] else 0
-            conf_v = sum(int(x) for x in data_v['conf'] if x != '-1') / len([x for x in data_v['conf'] if x != '-1']) if [x for x in data_v['conf'] if x != '-1'] else 0
-            
-            logger.info(f"OCR confidence: horizontal={conf_h:.1f}%, vertical={conf_v:.1f}%")
-            
-            # 信頼度が高い方を選択
-            if conf_v > conf_h:
-                logger.info("Using vertical text orientation (higher confidence)")
-                text = text_v
+            # 縦書きテキストの場合、画像を回転
+            if orientation == "vertical":
+                # 画像を90度回転して縦書きテキストを横向きにする
+                rotated_image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+                
+                # 日本語縦書きモードでOCR実行
+                text = pytesseract.image_to_string(
+                    rotated_image,
+                    lang=lang,
+                    config=config
+                )
+                
+                # 縦書きテキストの場合、行の順序を右から左に修正
+                # 日本語の縦書きは右から左に読むため
+                lines = text.splitlines()
+                if len(lines) > 1:
+                    # 各行を配列に格納し逆順にする
+                    reversed_lines = list(reversed(lines))
+                    text = "\n".join(reversed_lines)
+                    
             else:
-                logger.info("Using horizontal text orientation (higher confidence)")
-                text = text_h
+                # 横書きテキストの場合、そのままOCR実行
+                text = pytesseract.image_to_string(
+                    image,
+                    lang=lang,
+                    config=config
+                )
+            
+            # テキストが十分に抽出できなかった場合、別の設定で再試行
+            if len(text.strip()) < 50:
+                self.logger.warning("テキスト抽出結果が少なすぎます。別の設定で再試行します。")
+                
+                # 別の設定で再試行（セグメンテーションモードを変更）
+                alt_config = f"{config} --psm 4" if orientation == "vertical" else f"{config} --psm 6"
+                
+                if orientation == "vertical":
+                    text = pytesseract.image_to_string(
+                        rotated_image,
+                        lang=lang,
+                        config=alt_config
+                    )
+                    lines = text.splitlines()
+                    if len(lines) > 1:
+                        reversed_lines = list(reversed(lines))
+                        text = "\n".join(reversed_lines)
+                else:
+                    text = pytesseract.image_to_string(
+                        image,
+                        lang=lang,
+                        config=alt_config
+                    )
+            
+            # 空白行の削除と正規化
+            text = "\n".join(line for line in text.splitlines() if line.strip())
+            
+            # テキスト抽出の結果をログに記録
+            text_length = len(text)
+            self.logger.info(f"テキスト抽出完了: {text_length}文字")
+            if text_length < 100:
+                self.logger.warning(f"抽出テキストが短すぎます: {text}")
+                
+            return text
+            
         except Exception as e:
-            logger.warning(f"Error during orientation detection: {str(e)}. Using default orientation.")
-            # エラーが発生した場合はデフォルト設定で抽出
-            text = pytesseract.image_to_string(pil_image, lang=lang, config=config)
-        
-        # 文字列の正規化
-        text = self._normalize_text(text)
-        
-        logger.info("Extracted text length: %d characters", len(text))
-        if len(text) < 50:  # 短すぎるテキストはログに出力（デバッグ用）
-            logger.warning("Extracted text is too short: %s", text)
-        
-        return text
-    
-    def _normalize_text(self, text):
+            self.logger.error(f"テキスト抽出エラー: {str(e)}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            return ""
+
+    def _preprocess_image(self, image_path):
         """
-        抽出されたテキストを正規化する
+        OCR処理のための画像前処理を行う
         
         Args:
-            text (str): OCRで抽出されたテキスト
+            image_path (str): 処理する画像ファイルのパス
             
         Returns:
-            str: 正規化されたテキスト
+            numpy.ndarray: 前処理済みの画像データ
+            str: 検出されたテキスト向き ('horizontal' または 'vertical')
         """
-        # 全角数字を半角に変換
-        zen_to_han = str.maketrans('０１２３４５６７８９．，', '0123456789.,')
-        text = text.translate(zen_to_han)
+        logger.info(f"画像の前処理を開始: {image_path}")
         
-        # 改行の正規化
-        text = re.sub(r'\r\n', '\n', text)
+        try:
+            # 画像の読み込み
+            img = cv2.imread(image_path)
+            if img is None:
+                raise ValueError(f"画像の読み込みに失敗しました: {image_path}")
+            
+            # 画像の前処理
+            processed_img = self._process_image(img)
+            
+            # テキスト向きの検出
+            orientation = self._detect_text_orientation(processed_img)
+            
+            logger.info(f"画像の前処理が完了しました: {image_path} (向き: {orientation})")
+            return processed_img, orientation
+            
+        except Exception as e:
+            logger.error(f"画像の前処理中にエラーが発生しました: {str(e)}", exc_info=True)
+            # エラー時はオリジナル画像と水平向きを返す
+            if 'img' in locals() and img is not None:
+                return img, 'horizontal'
+            else:
+                # 読み込みに失敗した場合は空の画像を返す
+                return np.zeros((100, 100, 3), dtype=np.uint8), 'horizontal'
+
+    def _process_image(self, img):
+        """
+        画像の前処理を行う詳細なメソッド
         
-        # 連続する空白の削除
-        text = re.sub(r' +', ' ', text)
+        Args:
+            img (numpy.ndarray): 処理する画像データ
+            
+        Returns:
+            numpy.ndarray: 前処理済みの画像データ
+        """
+        preprocessing_params = {}
+        img_enhanced = img.copy()
         
-        # 特殊文字の置換
-        text = text.replace('−', '-').replace('ー', '-').replace('一', '').replace('‐', '-')
+        # 画像のサイズ確認と調整
+        if img.shape[0] < 1000 or img.shape[1] < 1000:
+            scale_factor = max(1000 / img.shape[0], 1000 / img.shape[1])
+            new_width = int(img.shape[1] * scale_factor)
+            new_height = int(img.shape[0] * scale_factor)
+            img_enhanced = cv2.resize(img_enhanced, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
+            preprocessing_params['resized'] = True
+            preprocessing_params['original_size'] = (img.shape[1], img.shape[0])
+            preprocessing_params['new_size'] = (new_width, new_height)
         
-        # 登記簿特有の文字パターンの補正
-        # 「号」と「3」の混同修正
-        text = re.sub(r'([0-9]+)号', r'\1号', text)
-        text = re.sub(r'([0-9]+)3', r'\1号', text)
+        # グレースケールに変換
+        if len(img_enhanced.shape) == 3:
+            gray = cv2.cvtColor(img_enhanced, cv2.COLOR_BGR2GRAY)
+            preprocessing_params['to_grayscale'] = True
+        else:
+            gray = img_enhanced
+            preprocessing_params['to_grayscale'] = False
         
-        # 「番」と「香」の混同修正
-        text = re.sub(r'([0-9]+)香', r'\1番', text)
+        # コントラスト強調
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        gray = clahe.apply(gray)
+        preprocessing_params['contrast_enhanced'] = True
         
-        # 「㎡」と「m2」の統一
-        text = re.sub(r'm2', '㎡', text)
-        text = re.sub(r'm²', '㎡', text)
+        # 適応的な二値化
+        binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+        preprocessing_params['adaptive_threshold'] = True
         
-        # 日付表記の統一 (例: H30.1.1 → 平成30年1月1日)
-        text = re.sub(r'H([0-9]+)\.([0-9]+)\.([0-9]+)', r'平成\1年\2月\3日', text)
-        text = re.sub(r'R([0-9]+)\.([0-9]+)\.([0-9]+)', r'令和\1年\2月\3日', text)
+        # ノイズ除去（モルフォロジー演算）
+        kernel = np.ones((1, 1), np.uint8)
+        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
+        preprocessing_params['noise_removal'] = True
         
-        # 余分な記号の削除
-        text = re.sub(r'[|｜]', '', text)
+        # 回転補正（スキューの検出と補正）
+        # 登記簿は通常縦書きなので、縦方向のライン検出が重要
+        is_vertical = self._detect_vertical_text(binary)
+        preprocessing_params['is_vertical_text'] = is_vertical
         
-        return text
-    
+        # 縦書きテキストの場合、回転補正を行う
+        if is_vertical:
+            # 必要に応じて画像の回転処理を実装
+            # 縦書きテストのために90度回転した画像も作成
+            rotated = cv2.rotate(gray, cv2.ROTATE_90_CLOCKWISE)
+            preprocessing_params['rotated_for_vertical'] = True
+        else:
+            rotated = gray
+            preprocessing_params['rotated_for_vertical'] = False
+        
+        # 余白のトリミング
+        # テキスト領域を検出して余分な余白をトリミング
+        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if contours:
+            # テキスト領域を含む最小の矩形を見つける
+            x_min, y_min = img_enhanced.shape[1], img_enhanced.shape[0]
+            x_max, y_max = 0, 0
+            
+            for contour in contours:
+                x, y, w, h = cv2.boundingRect(contour)
+                x_min = min(x_min, x)
+                y_min = min(y_min, y)
+                x_max = max(x_max, x + w)
+                y_max = max(y_max, y + h)
+            
+            # 余白を追加して切り取り
+            margin = 50
+            x_min = max(0, x_min - margin)
+            y_min = max(0, y_min - margin)
+            x_max = min(img_enhanced.shape[1], x_max + margin)
+            y_max = min(img_enhanced.shape[0], y_max + margin)
+            
+            # 境界が有効な場合のみトリミング
+            if x_min < x_max and y_min < y_max:
+                img_enhanced = img_enhanced[y_min:y_max, x_min:x_max]
+                preprocessing_params['trimmed'] = True
+                preprocessing_params['trim_box'] = (x_min, y_min, x_max, y_max)
+        
+        # DPI情報の設定（Tesseractの精度向上のため）
+        # これはPIL画像の属性として設定する必要がある場合がある
+        preprocessing_params['dpi_set'] = True
+        
+        # ログに前処理パラメータを記録
+        logger.debug(f"画像前処理パラメータ: {preprocessing_params}")
+        
+        return img_enhanced
+
+    def _detect_text_orientation(self, img):
+        """
+        画像内のテキストの向き（縦書き/横書き）を検出する
+        
+        Args:
+            img (numpy.ndarray): 分析する画像データ
+            
+        Returns:
+            str: テキストの向き ('horizontal' または 'vertical')
+        """
+        # グレースケールに変換
+        if len(img.shape) == 3:
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = img
+            
+        # 二値化
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        
+        # 水平方向と垂直方向の射影プロファイルを計算
+        h_proj = np.sum(binary, axis=1)
+        v_proj = np.sum(binary, axis=0)
+        
+        # 水平方向と垂直方向の変化量を計算
+        h_diff = np.sum(np.abs(np.diff(h_proj)))
+        v_diff = np.sum(np.abs(np.diff(v_proj)))
+        
+        # 登記簿に特有のパターンを探す（例: 「登記簿」「権利者」などの文字列）
+        # この部分はテッセラクトを使って特定の領域のテキストを抽出し判断することも可能
+        
+        # 変化量の比率で判断
+        if h_diff > v_diff * 1.2:
+            # 水平方向の変化が大きい場合は縦書きの可能性が高い
+            return 'vertical'
+        else:
+            # そうでない場合は横書きと判断
+            return 'horizontal'
+
+    def _detect_vertical_text(self, img):
+        """
+        画像内のテキストの向き（縦書き/横書き）を検出する
+        
+        Args:
+            img (numpy.ndarray): 分析する画像データ
+            
+        Returns:
+            bool: 縦書きの場合はTrue、横書きの場合はFalse
+        """
+        # グレースケールに変換
+        if len(img.shape) == 3:
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = img
+            
+        # 二値化
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        
+        # 水平方向と垂直方向の射影プロファイルを計算
+        h_proj = np.sum(binary, axis=1)
+        v_proj = np.sum(binary, axis=0)
+        
+        # 水平方向と垂直方向の変化量を計算
+        h_diff = np.sum(np.abs(np.diff(h_proj)))
+        v_diff = np.sum(np.abs(np.diff(v_proj)))
+        
+        # 変化量の比率で判断
+        if h_diff > v_diff * 1.2:
+            # 水平方向の変化が大きい場合は縦書きの可能性が高い
+            return True
+        else:
+            # そうでない場合は横書きと判断
+            return False
+
+    def _calculate_confidence(self, structured_data):
+        """
+        抽出された構造化データの信頼度を計算する
+        
+        Args:
+            structured_data (dict): 構造化データ
+            
+        Returns:
+            float: 0.0～1.0の信頼度スコア
+        """
+        if not structured_data:
+            return 0.0
+        
+        # 重要フィールドとその重み
+        field_weights = {
+            'property_number': 0.15,  # 不動産番号
+            'address': 0.15,          # 所在
+            'lot_number': 0.10,       # 地番
+            'area': 0.10,             # 地積
+            'owner_name': 0.20,       # 所有者名
+            'owner_address': 0.15,    # 所有者住所
+            'registration_date': 0.10  # 登記日付
+        }
+        
+        # 存在・形式の正確性に基づいて各フィールドの信頼度を評価
+        field_scores = {}
+        
+        # 不動産番号の評価
+        if 'property_number' in structured_data and structured_data['property_number']:
+            property_number = structured_data['property_number']
+            import re
+            if re.match(r'^\d{4}-\d{4}-\d{4}$', property_number):
+                field_scores['property_number'] = 1.0  # 完全な形式
+            elif re.match(r'^\d{12}$', property_number):
+                field_scores['property_number'] = 0.9  # ハイフンがない
+            elif re.match(r'^\d{4}[-]?\d{4}[-]?\d{1,3}', property_number):
+                field_scores['property_number'] = 0.7  # 一部欠損
+            else:
+                field_scores['property_number'] = 0.3  # 形式が異なる
+        else:
+            field_scores['property_number'] = 0.0
+        
+        # 住所の評価
+        if 'address' in structured_data and structured_data['address']:
+            address = structured_data['address']
+            if len(address) > 8:  # 十分な長さの住所
+                # 一般的な都道府県名が含まれるか
+                import re
+                prefectures = '東京都|北海道|大阪府|京都府|神奈川県|埼玉県|千葉県|愛知県|兵庫県|福岡県'
+                if re.search(f'({prefectures})', address):
+                    field_scores['address'] = 0.9
+                else:
+                    field_scores['address'] = 0.6
+            else:
+                field_scores['address'] = 0.3  # 住所が短すぎる
+        else:
+            field_scores['address'] = 0.0
+        
+        # 地番の評価
+        if 'lot_number' in structured_data and structured_data['lot_number']:
+            lot_number = structured_data['lot_number']
+            import re
+            if re.match(r'^\d+(-\d+)?$', lot_number):
+                field_scores['lot_number'] = 1.0  # 数字とハイフンのみ
+            elif re.match(r'^\d+番\d*号?$', lot_number):
+                field_scores['lot_number'] = 0.9  # 「番」「号」を含む
+            elif re.search(r'\d+', lot_number):
+                field_scores['lot_number'] = 0.7  # 数字を含む
+            else:
+                field_scores['lot_number'] = 0.4
+        else:
+            field_scores['lot_number'] = 0.0
+        
+        # 地積（面積）の評価
+        if 'area' in structured_data:
+            area = structured_data['area']
+            if isinstance(area, (int, float)) and area > 0:
+                field_scores['area'] = 1.0  # 数値型で正の値
+            elif isinstance(area, str) and re.search(r'\d+\.?\d*', area):
+                field_scores['area'] = 0.7  # 数字を含む文字列
+            else:
+                field_scores['area'] = 0.3
+        else:
+            field_scores['area'] = 0.0
+        
+        # 所有者名の評価
+        if 'owner_name' in structured_data and structured_data['owner_name']:
+            owner_name = structured_data['owner_name']
+            if len(owner_name) >= 2:
+                # 一般的な名前の特徴（個人名または法人名）
+                import re
+                if re.search(r'株式会社|有限会社|合同会社', owner_name):
+                    field_scores['owner_name'] = 0.9  # 法人名
+                elif len(owner_name) <= 20:  # 個人名は比較的短い
+                    field_scores['owner_name'] = 0.8
+                else:
+                    field_scores['owner_name'] = 0.6
+            else:
+                field_scores['owner_name'] = 0.3  # 名前が短すぎる
+        else:
+            field_scores['owner_name'] = 0.0
+        
+        # 所有者住所の評価
+        if 'owner_address' in structured_data and structured_data['owner_address']:
+            owner_address = structured_data['owner_address']
+            if len(owner_address) > 8:
+                import re
+                prefectures = '東京都|北海道|大阪府|京都府|神奈川県|埼玉県|千葉県|愛知県|兵庫県|福岡県'
+                if re.search(f'({prefectures})', owner_address):
+                    field_scores['owner_address'] = 0.9
+                else:
+                    field_scores['owner_address'] = 0.6
+            else:
+                field_scores['owner_address'] = 0.3
+        else:
+            field_scores['owner_address'] = 0.0
+        
+        # 登記日付の評価
+        if 'registration_date' in structured_data and structured_data['registration_date']:
+            date_str = structured_data['registration_date']
+            import re
+            # YYYY/MM/DD形式または和暦形式
+            if re.match(r'^\d{4}/\d{1,2}/\d{1,2}$', date_str):
+                field_scores['registration_date'] = 1.0
+            elif re.search(r'(平成|令和|昭和)\d{1,2}年\d{1,2}月\d{1,2}日', date_str):
+                field_scores['registration_date'] = 0.9
+            elif re.search(r'\d{1,2}年\d{1,2}月\d{1,2}日', date_str):
+                field_scores['registration_date'] = 0.7
+            elif re.search(r'\d{1,2}/\d{1,2}/\d{1,4}', date_str):
+                field_scores['registration_date'] = 0.7
+            else:
+                field_scores['registration_date'] = 0.4
+        else:
+            field_scores['registration_date'] = 0.0
+        
+        # 全体の信頼度を計算（重み付け合計）
+        total_weight = 0
+        weighted_score = 0
+        
+        for field, weight in field_weights.items():
+            if field in field_scores:
+                weighted_score += field_scores[field] * weight
+                total_weight += weight
+        
+        # 重みの合計が0でない場合のみ計算
+        if total_weight > 0:
+            overall_confidence = weighted_score / total_weight
+        else:
+            overall_confidence = 0.0
+        
+        # 抵当権情報があれば追加のボーナス
+        if 'mortgage_rights' in structured_data and structured_data['mortgage_rights']:
+            mortgage_count = len(structured_data['mortgage_rights'])
+            if mortgage_count > 0:
+                # 抵当権情報があると信頼度が上がる（最大0.1のボーナス）
+                mortgage_bonus = min(mortgage_count * 0.02, 0.1)
+                overall_confidence = min(overall_confidence + mortgage_bonus, 1.0)
+        
+        # デバッグ情報
+        self.logger.debug(f"フィールド信頼度: {field_scores}")
+        self.logger.debug(f"全体信頼度: {overall_confidence:.2f}")
+        
+        return overall_confidence
+
+    def _check_dependencies(self):
+        """
+        必要なライブラリの存在確認を行う
+        """
+        # このメソッドの実装は必要なライブラリの存在確認を行う
+        # 実際の実装は環境に応じて適切に実装する必要がある
+        pass
+
     def extract_structured_data(self, text):
         """
-        抽出されたテキストから構造化データを抽出する
+        OCRテキストから構造化データを抽出する
         
         Args:
             text (str): OCRで抽出されたテキスト
             
         Returns:
-            dict: 構造化データを含む辞書
+            dict: 構造化されたデータ
         """
-        # 空の構造化データ辞書を初期化
-        structured_data = {
-            'property_number': '',
-            'address': '',
-            'lot_number': '',
-            'area': '',
-            'area_unit': '㎡',
-            'owner': {
-                'name': '',
-                'address': ''
-            },
-            'rights': []
-        }
+        self.logger.info("構造化データの抽出を開始")
         
-        # 不動産番号の抽出
-        property_number_match = re.search(self.patterns['property_number'], text)
-        if property_number_match:
-            structured_data['property_number'] = property_number_match.group(1).strip()
+        # 抵当権情報の抽出
+        mortgage_rights = self._extract_mortgage_rights(text)
         
-        # 所在地の抽出（住所パターンを改善）
-        address_match = re.search(self.patterns['address'], text)
-        if address_match:
-            structured_data['address'] = address_match.group(1).strip()
-        else:
-            # 別の表現パターンで再試行
-            address_pattern2 = r'(?:所在|住所)\s*[:：]\s*(.+[都道府県].+[市区町村].+)'
-            address_match2 = re.search(address_pattern2, text)
-            if address_match2:
-                structured_data['address'] = address_match2.group(1).strip()
+        # 所有権情報の抽出
+        ownership_rights = self._extract_ownership_rights(text)
         
-        # 地番の抽出（パターンの改善）
-        lot_number_match = re.search(self.patterns['lot_number'], text)
-        if lot_number_match:
-            structured_data['lot_number'] = lot_number_match.group(1).strip()
-        else:
-            # 別の表現パターンで再試行
-            lot_pattern2 = r'(?:地番|番地)\s*[:：]\s*([0-9０-９-－]+(?:[番号][地目][0-9０-９-－]*)?)'
-            lot_match2 = re.search(lot_pattern2, text)
-            if lot_match2:
-                structured_data['lot_number'] = lot_match2.group(1).strip()
+        # 構造化データを統合
+        structured_data = {**ownership_rights, "mortgage_rights": mortgage_rights}
         
-        # 地積（面積）の抽出
-        area_match = re.search(self.patterns['area'], text)
-        if area_match:
-            # 数値と単位を分ける
-            structured_data['area'] = area_match.group(1).strip().replace(',', '')
-            structured_data['area_unit'] = area_match.group(2).strip()
-        else:
-            # 別の表現パターンで再試行
-            area_pattern2 = r'(?:地積|面積)\s*[:：]\s*([0-9０-９,.，．]+)\s*([平方メートル㎡])'
-            area_match2 = re.search(area_pattern2, text)
-            if area_match2:
-                structured_data['area'] = area_match2.group(1).strip().replace(',', '')
-                structured_data['area_unit'] = area_match2.group(2).strip()
+        # 空の値をクリーンアップ
+        cleaned_data = self._clean_empty_values(structured_data)
         
-        # 所有者（名義人）情報の抽出
-        owner_name_match = re.search(self.patterns['owner_name'], text)
-        if owner_name_match:
-            structured_data['owner']['name'] = owner_name_match.group(1).strip()
+        # データの後処理と正規化
+        processed_data = self.postprocess_ocr_text(cleaned_data)
         
-        owner_address_match = re.search(self.patterns['owner_address'], text)
-        if owner_address_match:
-            structured_data['owner']['address'] = owner_address_match.group(1).strip()
+        # 信頼度スコアを計算
+        confidence = self._calculate_confidence(processed_data)
         
-        # 権利情報の抽出（甲区・乙区）
-        # 甲区（所有権関連）の抽出
-        rights_pattern = r'(?:甲区|権利者|所有権).*?\n(.*?)\n(?:乙区|債務者|順位|備考|$)'
-        rights_match = re.search(rights_pattern, text, re.DOTALL)
-        if rights_match:
-            rights_text = rights_match.group(1)
-            # 各権利の区切りで分割
-            rights_entries = re.split(r'(?:\d+\s*番|\d+\s*順位)', rights_text)
-            for entry in rights_entries:
-                if entry.strip():
-                    right = self._parse_right_entry(entry)
-                    if right:
-                        structured_data['rights'].append(right)
+        self.logger.info(f"構造化データの抽出完了: {len(processed_data)} フィールド, 信頼度: {confidence:.2f}")
         
-        # 乙区（抵当権等）の抽出
-        mortgage_pattern = r'(?:乙区|抵当権).*?\n(.*?)(?:付記|$)'
-        mortgage_match = re.search(mortgage_pattern, text, re.DOTALL)
-        if mortgage_match:
-            mortgage_text = mortgage_match.group(1)
-            mortgage_entries = re.split(r'(?:\d+\s*番|\d+\s*順位)', mortgage_text)
-            for entry in mortgage_entries:
-                if entry.strip():
-                    mortgage = self._parse_mortgage_entry(entry)
-                    if mortgage:
-                        structured_data['rights'].append(mortgage)
-        
-        return structured_data
-    
-    def _parse_right_entry(self, entry):
-        """権利情報のエントリを解析する"""
-        right = {
-            'type': '所有権',
-            'date': '',
-            'cause': '',
-            'owner': ''
-        }
-        
-        # 登記日の抽出
-        date_match = re.search(r'(?:登記日|受付日|日付)[：:]\s*([0-9０-９年月日]+)', entry)
-        if date_match:
-            right['date'] = date_match.group(1).strip()
-        
-        # 登記原因の抽出
-        cause_match = re.search(r'(?:原因|登記原因)[：:]\s*(.+)', entry)
-        if cause_match:
-            right['cause'] = cause_match.group(1).strip()
-        else:
-            # 登記原因をキーワードから推測
-            if '相続' in entry:
-                right['cause'] = '相続'
-            elif '売買' in entry:
-                right['cause'] = '売買'
-            elif '贈与' in entry:
-                right['cause'] = '贈与'
-        
-        # 所有者の抽出
-        owner_match = re.search(r'(?:所有者|権利者|名義人)[：:]\s*(.+)', entry)
-        if owner_match:
-            right['owner'] = owner_match.group(1).strip()
-        
-        return right if any(right.values()) else None
-    
-    def _parse_mortgage_entry(self, entry):
-        """抵当権情報のエントリを解析する"""
-        mortgage = {
-            'type': '抵当権',
-            'date': '',
-            'amount': '',
-            'creditor': '',
-            'debtor': ''
-        }
-        
-        # 登記日の抽出
-        date_match = re.search(r'(?:登記日|受付日|日付)[：:]\s*([0-9０-９年月日]+)', entry)
-        if date_match:
-            mortgage['date'] = date_match.group(1).strip()
-        
-        # 債権額の抽出
-        amount_match = re.search(r'(?:債権額|金額)[：:]\s*([0-9０-９,.，．]+)(?:円|金)', entry)
-        if amount_match:
-            mortgage['amount'] = amount_match.group(1).strip().replace(',', '')
-        
-        # 債権者の抽出
-        creditor_match = re.search(r'(?:債権者|抵当権者)[：:]\s*(.+)', entry)
-        if creditor_match:
-            mortgage['creditor'] = creditor_match.group(1).strip()
-        
-        # 債務者の抽出
-        debtor_match = re.search(r'(?:債務者|設定者)[：:]\s*(.+)', entry)
-        if debtor_match:
-            mortgage['debtor'] = debtor_match.group(1).strip()
-        
-        return mortgage if any(mortgage.values()) else None
-    
-    def process_image(self, image_path):
+        return processed_data, confidence
+
+    def _extract_mortgage_rights(self, ocr_text):
         """
-        画像を処理してOCR結果を返す
+        OCRテキストから抵当権情報を抽出する
+        
+        Args:
+            ocr_text (str): OCRで抽出されたテキスト
+            
+        Returns:
+            list: 抵当権情報のリスト（辞書形式）
+        """
+        if not ocr_text:
+            return []
+            
+        mortgage_rights = []
+        
+        # 乙区（抵当権）のセクションを検出
+        mortgage_section_pattern = r"乙区.*?((?:順位|順位番号).*?(?:権利者|債権者).*?)(?:丙区|$)"
+        mortgage_section_match = re.search(mortgage_section_pattern, ocr_text, re.DOTALL | re.IGNORECASE)
+        
+        if not mortgage_section_match:
+            return []
+            
+        mortgage_section = mortgage_section_match.group(1)
+        
+        # 順位番号ごとに分割
+        rank_entries = re.split(r"(?:順位|順位番号)\s*(\d+)", mortgage_section)
+        
+        if len(rank_entries) <= 1:
+            return []
+            
+        # 最初のエントリーは分割の前の部分なので無視
+        for i in range(1, len(rank_entries), 2):
+            if i + 1 >= len(rank_entries):
+                break
+                
+            rank = rank_entries[i]
+            entry = rank_entries[i + 1]
+            
+            # 抵当権の目的・種類を抽出
+            purpose_pattern = r"(?:目的|権利の種類)[：:]\s*(.+?)(?:\n|$)"
+            purpose_match = re.search(purpose_pattern, entry)
+            purpose = purpose_match.group(1).strip() if purpose_match else ""
+            
+            # 日付を抽出（和暦・西暦両方対応）
+            date_pattern = r"(?:日付|受付日(?:時)?)[：:]\s*(?:令和|平成|昭和)?\s*(\d+)\s*年\s*(\d+)\s*月\s*(\d+)\s*日"
+            date_match = re.search(date_pattern, entry)
+            
+            registration_date = None
+            if date_match:
+                year, month, day = date_match.groups()
+                # 和暦の場合は西暦に変換する処理を追加（この例では単純化）
+                era_pattern = r"(令和|平成|昭和)\s*(\d+)\s*年"
+                era_match = re.search(era_pattern, entry)
+                if era_match:
+                    era, year = era_match.groups()
+                    year = int(year)
+                    if era == "令和":
+                        year += 2018
+                    elif era == "平成":
+                        year += 1988
+                    elif era == "昭和":
+                        year += 1925
+                registration_date = f"{year}年{month}月{day}日"
+            
+            # 原因を抽出
+            cause_pattern = r"(?:原因|登記原因)[：:]\s*(.+?)(?:\n|$)"
+            cause_match = re.search(cause_pattern, entry)
+            cause = cause_match.group(1).strip() if cause_match else ""
+            
+            # 金額を抽出
+            amount_pattern = r"(?:金額|債権額(?:等)?)[：:]\s*(.+?)(?:\n|$)"
+            amount_match = re.search(amount_pattern, entry)
+            amount = amount_match.group(1).strip() if amount_match else ""
+            
+            # 利率を抽出
+            interest_pattern = r"(?:利率|利息)[：:]\s*(.+?)(?:\n|$)"
+            interest_match = re.search(interest_pattern, entry)
+            interest_rate = interest_match.group(1).strip() if interest_match else ""
+            
+            # 債権者を抽出
+            creditor_pattern = r"(?:債権者|権利者)[：:]\s*(.+?)(?:\n|$)"
+            creditor_match = re.search(creditor_pattern, entry)
+            creditor = creditor_match.group(1).strip() if creditor_match else ""
+            
+            # 債務者を抽出
+            debtor_pattern = r"(?:債務者)[：:]\s*(.+?)(?:\n|$)"
+            debtor_match = re.search(debtor_pattern, entry)
+            debtor = debtor_match.group(1).strip() if debtor_match else ""
+            
+            mortgage_right = {
+                "section": "乙区",
+                "rank": rank,
+                "type": "抵当権",
+                "purpose": purpose,
+                "date": registration_date,
+                "cause": cause,
+                "amount": amount,
+                "interest_rate": interest_rate,
+                "creditor": creditor,
+                "debtor": debtor
+            }
+            
+            mortgage_rights.append(mortgage_right)
+            
+        return mortgage_rights
+
+    def _extract_ownership_rights(self, ocr_text):
+        """
+        OCRテキストから所有権情報を抽出する
+        
+        Args:
+            ocr_text (str): OCRで抽出されたテキスト
+            
+        Returns:
+            list: 所有権情報のリスト（辞書形式）
+        """
+        if not ocr_text:
+            return []
+            
+        ownership_rights = []
+        
+        # 甲区（所有権）のセクションを検出
+        ownership_section_pattern = r"甲区.*?((?:順位|順位番号).*?(?:権利者|所有者).*?)(?:乙区|$)"
+        ownership_section_match = re.search(ownership_section_pattern, ocr_text, re.DOTALL | re.IGNORECASE)
+        
+        if not ownership_section_match:
+            return []
+            
+        ownership_section = ownership_section_match.group(1)
+        
+        # 順位番号ごとに分割
+        rank_entries = re.split(r"(?:順位|順位番号)\s*(\d+)", ownership_section)
+        
+        if len(rank_entries) <= 1:
+            return []
+            
+        # 最初のエントリーは分割の前の部分なので無視
+        for i in range(1, len(rank_entries), 2):
+            if i + 1 >= len(rank_entries):
+                break
+                
+            rank = rank_entries[i]
+            entry = rank_entries[i + 1]
+            
+            # 所有権の目的・種類を抽出
+            purpose_pattern = r"(?:目的|権利の種類)[：:]\s*(.+?)(?:\n|$)"
+            purpose_match = re.search(purpose_pattern, entry)
+            purpose = purpose_match.group(1).strip() if purpose_match else "所有権"
+            
+            # 日付を抽出（和暦・西暦両方対応）
+            date_pattern = r"(?:日付|受付日(?:時)?)[：:]\s*(?:令和|平成|昭和)?\s*(\d+)\s*年\s*(\d+)\s*月\s*(\d+)\s*日"
+            date_match = re.search(date_pattern, entry)
+            
+            registration_date = None
+            if date_match:
+                year, month, day = date_match.groups()
+                # 和暦の場合は西暦に変換する処理を追加
+                era_pattern = r"(令和|平成|昭和)\s*(\d+)\s*年"
+                era_match = re.search(era_pattern, entry)
+                if era_match:
+                    era, year = era_match.groups()
+                    year = int(year)
+                    if era == "令和":
+                        year += 2018
+                    elif era == "平成":
+                        year += 1988
+                    elif era == "昭和":
+                        year += 1925
+                registration_date = f"{year}年{month}月{day}日"
+            
+            # 原因を抽出
+            cause_pattern = r"(?:原因|登記原因)[：:]\s*(.+?)(?:\n|$)"
+            cause_match = re.search(cause_pattern, entry)
+            cause = cause_match.group(1).strip() if cause_match else ""
+            
+            # 所有者（権利者）を抽出
+            owner_pattern = r"(?:所有者|権利者)[：:]\s*(.+?)(?:\n|所有者住所|権利者住所|$)"
+            owner_match = re.search(owner_pattern, entry, re.DOTALL)
+            owner = owner_match.group(1).strip() if owner_match else ""
+            
+            # 所有者住所を抽出
+            address_pattern = r"(?:所有者住所|権利者住所)[：:]\s*(.+?)(?:\n|$)"
+            address_match = re.search(address_pattern, entry, re.DOTALL)
+            address = address_match.group(1).strip() if address_match else ""
+            
+            # 住所が所有者名に含まれている場合の処理
+            if not address and owner:
+                address_in_owner = re.search(r"(.+?)(?:住所[：:]|所在地[：:]|在住[：:])\s*(.+)", owner)
+                if address_in_owner:
+                    owner = address_in_owner.group(1).strip()
+                    address = address_in_owner.group(2).strip()
+            
+            ownership_right = {
+                "section": "甲区",
+                "rank": rank,
+                "type": "所有権",
+                "purpose": purpose,
+                "date": registration_date,
+                "cause": cause,
+                "owner": owner,
+                "owner_address": address
+            }
+            
+            ownership_rights.append(ownership_right)
+            
+        return ownership_rights
+
+    def enhance_image(self, image_path):
+        """
+        画像の前処理を行い、OCR精度を向上させる
+        
+        Args:
+            image_path (str): 処理する画像のパス
+        
+        Returns:
+            str: 前処理後の画像のパス
+        """
+        logger.info("画像前処理を開始: %s", image_path)
+        
+        try:
+            # 画像読み込み
+            img = cv2.imread(image_path)
+            if img is None:
+                logger.error("画像の読み込みに失敗しました: %s", image_path)
+                return image_path
+            
+            # グレースケール変換
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            
+            # ノイズ除去（バイラテラルフィルタ）
+            denoise = cv2.bilateralFilter(gray, 9, 75, 75)
+            
+            # 適応的二値化
+            thresh = cv2.adaptiveThreshold(denoise, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                        cv2.THRESH_BINARY, 11, 2)
+            
+            # 傾き補正（自動方向検出が有効な場合）
+            if self.config['detect_orientation']:
+                # エッジを検出してから傾き推定を行う
+                edges = cv2.Canny(thresh, 50, 150, apertureSize=3)
+                lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, minLineLength=100, maxLineGap=10)
+                
+                if lines is not None and len(lines) > 0:
+                    angles = []
+                    for line in lines:
+                        x1, y1, x2, y2 = line[0]
+                        if x2 - x1 != 0:  # 垂直線を避ける
+                            angle = np.arctan((y2 - y1) / (x2 - x1)) * 180 / np.pi
+                            angles.append(angle)
+                    
+                    if angles:
+                        # 最も頻度の高い角度を見つける
+                        from collections import Counter
+                        angle_counts = Counter([round(a) for a in angles])
+                        dominant_angle = angle_counts.most_common(1)[0][0]
+                        
+                        # 画像を回転
+                        if abs(dominant_angle) > 0.5:  # 角度が小さすぎる場合は回転しない
+                            (h, w) = thresh.shape[:2]
+                            center = (w // 2, h // 2)
+                            M = cv2.getRotationMatrix2D(center, dominant_angle, 1.0)
+                            thresh = cv2.warpAffine(thresh, M, (w, h), flags=cv2.INTER_CUBIC, 
+                                                borderMode=cv2.BORDER_REPLICATE)
+                            logger.info("画像を %f 度回転しました", dominant_angle)
+            
+            # コントラスト強化
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+            enhanced = clahe.apply(thresh)
+            
+            # 線の除去（登記簿の枠線などを除去）
+            if self.config['remove_lines']:
+                # 水平線と垂直線を検出して除去
+                horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 1))
+                vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 25))
+                
+                # 水平線を検出
+                horizontal_lines = cv2.morphologyEx(enhanced, cv2.MORPH_OPEN, horizontal_kernel, iterations=2)
+                # 垂直線を検出
+                vertical_lines = cv2.morphologyEx(enhanced, cv2.MORPH_OPEN, vertical_kernel, iterations=2)
+                
+                # 検出した線を結合
+                lines = horizontal_lines + vertical_lines
+                
+                # 線を除去（白黒反転して計算）
+                enhanced = cv2.bitwise_not(enhanced)
+                lines = cv2.bitwise_not(lines)
+                no_lines = cv2.bitwise_and(enhanced, enhanced, mask=lines)
+                enhanced = cv2.bitwise_not(no_lines)
+            
+            # 拡大（解像度向上）
+            scale_percent = 200
+            width = int(enhanced.shape[1] * scale_percent / 100)
+            height = int(enhanced.shape[0] * scale_percent / 100)
+            enlarged = cv2.resize(enhanced, (width, height), interpolation=cv2.INTER_CUBIC)
+            
+            # 結果を保存
+            filename = os.path.basename(image_path)
+            name, ext = os.path.splitext(filename)
+            output_path = os.path.join(self.temp_dir, f"{name}_enhanced{ext}")
+            cv2.imwrite(output_path, enlarged)
+            
+            # デバッグ用に前処理画像も保存
+            debug_path = os.path.join(self.temp_dir, "debug_preprocess.png")
+            cv2.imwrite(debug_path, enlarged)
+            
+            logger.info("画像前処理が完了しました: %s", output_path)
+            return output_path
+            
+        except Exception as e:
+            logger.error("画像前処理中にエラーが発生しました: %s", str(e), exc_info=True)
+            return image_path  # エラーが発生した場合は元の画像を返す
+
+    def postprocess_ocr_text(self, structured_data):
+        """
+        OCR結果の構造化データを後処理して品質を向上させる
+        
+        Args:
+            structured_data (dict): OCRで抽出された構造化データ
+            
+        Returns:
+            dict: 後処理された構造化データ
+        """
+        if not structured_data:
+            return structured_data
+        
+        try:
+            # 不動産番号の正規化（数字とハイフンのみ）
+            if 'property_number' in structured_data:
+                property_number = structured_data['property_number']
+                if property_number:
+                    # 数字とハイフンのみ抽出
+                    import re
+                    clean_number = ''.join(c for c in property_number if c.isdigit() or c == '-')
+                    # 形式チェック（例：1234-5678-9012）
+                    if re.match(r'^\d{4}-\d{4}-\d{4}$', clean_number):
+                        structured_data['property_number'] = clean_number
+                    elif re.match(r'^\d{12}$', clean_number):
+                        # ハイフンがない場合、適切な位置に挿入
+                        formatted_number = f"{clean_number[:4]}-{clean_number[4:8]}-{clean_number[8:]}"
+                        structured_data['property_number'] = formatted_number
+            
+            # 地積（面積）の数値化
+            if 'area' in structured_data:
+                area_str = structured_data['area']
+                if isinstance(area_str, str) and area_str:
+                    # カンマ、空白を除去
+                    clean_area = area_str.replace(',', '').replace(' ', '')
+                    # 数字と小数点のみ抽出
+                    import re
+                    clean_area = re.sub(r'[^\d.]', '', clean_area)
+                    try:
+                        structured_data['area'] = float(clean_area)
+                    except:
+                        pass  # 変換できない場合は元の値を維持
+            
+            # 所有者名のフォーマット統一
+            if 'owner_name' in structured_data and structured_data['owner_name']:
+                owner_name = structured_data['owner_name']
+                # 余分な空白を削除
+                owner_name = ' '.join(owner_name.split())
+                # 氏名の一般的なパターンを修正
+                import re
+                # "株式会社XXX" のパターンを修正
+                if re.search(r'株式会朶|株式会社|株式台社', owner_name):
+                    owner_name = re.sub(r'株式会朶|株式台社', '株式会社', owner_name)
+                structured_data['owner_name'] = owner_name
+            
+            # 住所の正規化
+            if 'address' in structured_data and structured_data['address']:
+                address = structured_data['address']
+                # 余分な空白を削除
+                address = ' '.join(address.split())
+                # 誤認識されやすい住所パターンを修正
+                import re
+                address = re.sub(r'T\s*県', '千葉県', address)
+                address = re.sub(r'神奈jll', '神奈川', address)
+                structured_data['address'] = address
+            
+            # 日付の正規化
+            if 'registration_date' in structured_data and structured_data['registration_date']:
+                date_str = structured_data['registration_date']
+                # 日付のフォーマット統一（YYYY/MM/DD）
+                import re
+                # 和暦から西暦への変換
+                match = re.search(r'(平成|令和|昭和)(\d{1,2})年(\d{1,2})月(\d{1,2})日', date_str)
+                if match:
+                    era, year, month, day = match.groups()
+                    year = int(year)
+                    if era == '平成':
+                        year += 1988  # 平成元年 = 1989年
+                    elif era == '令和':
+                        year += 2018  # 令和元年 = 2019年
+                    elif era == '昭和':
+                        year += 1925  # 昭和元年 = 1926年
+                    
+                    # YYYY/MM/DD形式に変換
+                    structured_data['registration_date'] = f"{year}/{int(month)}/{int(day)}"
+            
+            return structured_data
+            
+        except Exception as e:
+            self.logger.error(f"構造化データの後処理中にエラーが発生しました: {str(e)}")
+            return structured_data  # エラーが発生した場合は元のデータを返す
+
+    def hybrid_ocr(self, image_path):
+        """
+        複数のOCRエンジンを組み合わせた複合アプローチでOCRを実行
         
         Args:
             image_path (str): 処理する画像のパス
             
         Returns:
-            dict: OCR結果と構造化データを含む辞書
+            tuple: (構造化データ辞書, 信頼度スコア, 抽出テキスト)
         """
-        logger.info("Processing image: %s", image_path)
+        self.logger.info(f"ハイブリッドOCR処理開始: {image_path}")
         
-        # 前処理
-        preprocessed = self.preprocess_image(image_path)
+        # 結果を保存する辞書
+        results = {}
         
-        # デバッグ用：前処理結果を一時ファイルとして保存
-        debug_path = os.path.join(self.config['temp_dir'], 'debug_preprocessed.png')
-        cv2.imwrite(debug_path, preprocessed)
+        # 1. 標準のOCR処理（TesseractベースのPyTesseract）
+        try:
+            self.logger.info("標準OCR処理を実行中...")
+            standard_data, standard_confidence, standard_text = self.process_image(image_path)
+            results['standard'] = {
+                'data': standard_data,
+                'confidence': standard_confidence,
+                'text': standard_text
+            }
+            self.logger.info(f"標準OCR処理完了: 信頼度 {standard_confidence:.2f}")
+        except Exception as e:
+            self.logger.error(f"標準OCR処理でエラー: {str(e)}")
+            results['standard'] = {
+                'data': {},
+                'confidence': 0.0,
+                'text': ""
+            }
         
-        # テキスト抽出
-        full_text = self.extract_text(preprocessed, self.config['lang'])
-        
-        # Tesseractが利用できない場合
-        if not TESSERACT_AVAILABLE:
-            # PDFが正常に変換されたことを示す最小限の結果を返す
-            file_name = os.path.basename(image_path)
-            processed_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # 2. 日本語特化OCR処理（PSMを変更）
+        try:
+            self.logger.info("日本語特化OCR処理を実行中...")
+            # 設定をコピーして日本語特化用に調整
+            jp_config = self.config.copy()
+            jp_config['psm'] = 4  # 縦書きテキスト向けのPSM
+            jp_config['optimize_japanese'] = True
             
-            result = {
-                'file_name': file_name,
-                'processed_at': processed_at,
-                'file_path': image_path,
-                'text': full_text,
-                'confidence': 0,
-                'structured_data': {
-                    'property_number': 'OCR機能が利用できません',
-                    'address': 'Tesseractがインストールされていません',
-                    'lot_number': '',
-                    'area': '',
-                    'area_unit': '㎡',
-                    'owner': {
-                        'name': '',
-                        'address': ''
-                    },
-                    'rights': []
-                }
+            # 一時的に設定を変更
+            original_config = self.config.copy()
+            self.config = jp_config
+            
+            # 日本語特化OCR実行
+            jp_data, jp_confidence, jp_text = self.process_image(image_path)
+            results['japanese'] = {
+                'data': jp_data,
+                'confidence': jp_confidence,
+                'text': jp_text
             }
             
-            return result
+            # 設定を元に戻す
+            self.config = original_config
+            self.logger.info(f"日本語特化OCR処理完了: 信頼度 {jp_confidence:.2f}")
+        except Exception as e:
+            self.logger.error(f"日本語特化OCR処理でエラー: {str(e)}")
+            results['japanese'] = {
+                'data': {},
+                'confidence': 0.0,
+                'text': ""
+            }
         
-        # 構造化データの抽出
-        structured_data = self.extract_structured_data(full_text)
-        
-        # 信頼度の計算
-        confidence = self._calculate_confidence(full_text)
-        
-        # データの検証と強化
-        structured_data = self._validate_and_enhance_data(structured_data)
-        
-        # 結果の組み立て
-        file_name = os.path.basename(image_path)
-        processed_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
-        result = {
-            'file_name': file_name,
-            'processed_at': processed_at,
-            'file_path': image_path,
-            'text': full_text,
-            'confidence': confidence,
-            'structured_data': structured_data
-        }
-        
-        logger.info("OCR process completed with confidence: %f", confidence)
-        
-        return result
-    
-    def _calculate_confidence(self, text):
-        """
-        OCR結果の信頼度を計算する
-        
-        Args:
-            text (str): OCRで抽出されたテキスト
+        # 3. 高精度OCR処理（高DPIと前処理強化）
+        try:
+            self.logger.info("高精度OCR処理を実行中...")
+            # 設定をコピーして高精度用に調整
+            hd_config = self.config.copy()
+            hd_config['dpi'] = 600  # 高DPI
+            hd_config['enhance_preprocessing'] = True
+            hd_config['remove_lines'] = True
             
-        Returns:
-            float: 信頼度（0-100）
-        """
-        # 基本的な文字認識率を見積もる
-        if not text.strip():
-            return 0
-        
-        # テキストの文字数
-        total_chars = len(text.strip())
-        
-        # 疑わしい文字のパターン（記号の混合や不明瞭な文字列）
-        suspicious_patterns = [
-            r'[^\w\s.,、。：;\-()（）「」]',  # 一般的でない記号
-            r'[a-zA-Z]{1}[a-zA-Z]{1}',  # 英字の混入
-            r'[0-9]{5,}',  # 不自然に長い数字列
-        ]
-        
-        suspicious_chars = 0
-        for pattern in suspicious_patterns:
-            suspicious_chars += len(re.findall(pattern, text))
-        
-        # 構造的な信頼度（項目の検出率）
-        structure_items = ['property_number', 'address', 'lot_number', 'area', 'owner_name']
-        structure_score = 0
-        
-        # 一時的に構造データを抽出して評価
-        data = self.extract_structured_data(text)
-        for item in structure_items:
-            if data[item]:
-                structure_score += 20  # 各項目20%として計算
-        
-        # 文字認識の信頼度（疑わしい文字が少ないほど高い）
-        char_confidence = 100 - (suspicious_chars / max(total_chars, 1) * 100)
-        
-        # 総合的な信頼度
-        total_confidence = (char_confidence * 0.7) + (structure_score * 0.3)
-        
-        # 範囲を0-100に制限
-        return max(0, min(100, total_confidence))
-    
-    def save_result(self, result, output_format='json'):
-        """
-        OCR処理結果を保存する
-        
-        Args:
-            result (dict): OCR処理結果
-            output_format (str, optional): 出力形式。デフォルトは'json'。
+            # 一時的に設定を変更
+            original_config = self.config.copy()
+            self.config = hd_config
             
-        Returns:
-            str: 保存されたファイルのパス
-        """
-        filename = os.path.splitext(result['file_name'])[0]
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_filename = f"{filename}_{timestamp}"
-        
-        if output_format == 'json':
-            output_path = os.path.join(self.config['output_dir'], f"{output_filename}.json")
-            with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(result, f, ensure_ascii=False, indent=2)
-            logger.info("Result saved to JSON: %s", output_path)
-            
-        elif output_format == 'csv':
-            output_path = os.path.join(self.config['output_dir'], f"{output_filename}.csv")
-            
-            # 構造化データをデータフレームに変換
-            df_data = {
-                '不動産番号': [result['structured_data'].get('property_number', '')],
-                '所在': [result['structured_data'].get('address', '')],
-                '地番': [result['structured_data'].get('lot_number', '')],
-                '地積': [result['structured_data'].get('area', '')],
-                '所有者名': [result['structured_data'].get('owner_name', '')],
-                '所有者住所': [result['structured_data'].get('owner_address', '')],
-                '権利情報': [', '.join(result['structured_data'].get('rights', []))]
+            # 高精度OCR実行
+            hd_data, hd_confidence, hd_text = self.process_image(image_path)
+            results['high_quality'] = {
+                'data': hd_data,
+                'confidence': hd_confidence,
+                'text': hd_text
             }
             
-            df = pd.DataFrame(df_data)
-            df.to_csv(output_path, index=False, encoding='utf-8-sig')
-            logger.info("Result saved to CSV: %s", output_path)
-            
-        else:
-            raise ValueError(f"未対応の出力形式です: {output_format}")
+            # 設定を元に戻す
+            self.config = original_config
+            self.logger.info(f"高精度OCR処理完了: 信頼度 {hd_confidence:.2f}")
+        except Exception as e:
+            self.logger.error(f"高精度OCR処理でエラー: {str(e)}")
+            results['high_quality'] = {
+                'data': {},
+                'confidence': 0.0,
+                'text': ""
+            }
         
-        return output_path
-    
-    def batch_process(self, image_dir, output_format='json'):
-        """
-        ディレクトリ内の画像を一括処理する
+        # 4. OpenAI OCR処理（もし利用可能であれば）
+        openai_available = False
+        try:
+            from openai_ocr import OpenAIOCR
+            openai_available = True
+        except ImportError:
+            openai_available = False
         
-        Args:
-            image_dir (str): 処理する画像が含まれるディレクトリのパス
-            output_format (str, optional): 出力形式。デフォルトは'json'。
-            
-        Returns:
-            list: 処理結果のリスト
-        """
-        allowed_extensions = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.pdf']
-        results = []
-        
-        logger.info("Starting batch processing in directory: %s", image_dir)
-        
-        # ディレクトリ内のファイルを取得
-        files = [f for f in os.listdir(image_dir) 
-                if os.path.isfile(os.path.join(image_dir, f)) and 
-                os.path.splitext(f)[1].lower() in allowed_extensions]
-        
-        logger.info("Found %d files to process", len(files))
-        
-        for file in files:
-            file_path = os.path.join(image_dir, file)
+        if openai_available and os.environ.get('OPENAI_API_KEY'):
             try:
-                logger.info("Processing file: %s", file_path)
-                result = self.process_image(file_path)
-                output_path = self.save_result(result, output_format)
+                self.logger.info("OpenAI Vision OCR処理を実行中...")
+                from openai_ocr import OpenAIOCR
                 
-                results.append({
-                    'file_name': file,
-                    'output_path': output_path,
-                    'confidence': result['confidence']
-                })
+                # OpenAI OCRの設定
+                openai_config = {
+                    'api_key': os.environ.get('OPENAI_API_KEY'),
+                    'model': 'gpt-4-vision-preview',
+                    'temperature': 0.3,
+                    'max_tokens': 4000,
+                    'detail_level': 'high'
+                }
                 
-                logger.info("Successfully processed file: %s", file_path)
+                # OpenAI OCRエンジンの初期化と実行
+                openai_ocr = OpenAIOCR(openai_config)
+                openai_data, openai_confidence, openai_text = openai_ocr.process_image(image_path)
                 
+                results['openai'] = {
+                    'data': openai_data,
+                    'confidence': openai_confidence,
+                    'text': openai_text
+                }
+                self.logger.info(f"OpenAI Vision OCR処理完了: 信頼度 {openai_confidence:.2f}")
             except Exception as e:
-                logger.error("Error processing file %s: %s", file_path, str(e), exc_info=True)
-                results.append({
-                    'file_name': file,
-                    'error': str(e)
-                })
+                self.logger.error(f"OpenAI Vision OCR処理でエラー: {str(e)}")
+                results['openai'] = {
+                    'data': {},
+                    'confidence': 0.0,
+                    'text': ""
+                }
         
-        logger.info("Batch processing completed. Processed %d/%d files successfully", 
-                    len([r for r in results if 'error' not in r]), len(files))
+        # 最終結果の統合（最も高い信頼度の結果をベースに）
+        best_engine = None
+        best_confidence = 0.0
         
-        return results
-
-
-# 使用例
-if __name__ == "__main__":
-    # コマンドライン引数の処理
-    if len(sys.argv) < 2:
-        print("使用方法: python ocr_implementation.py <画像ファイルまたはディレクトリ>")
-        sys.exit(1)
-    
-    input_path = sys.argv[1]
-    
-    # OCRエンジンの初期化
-    ocr = RegistryOCR()
-    
-    # ファイルまたはディレクトリの処理
-    if os.path.isfile(input_path):
-        # 単一ファイルの処理
-        result = ocr.process_image(input_path)
-        output_path = ocr.save_result(result)
-        print(f"処理完了: {input_path} -> {output_path}")
-    
-    elif os.path.isdir(input_path):
-        # ディレクトリのバッチ処理
-        results = ocr.batch_process(input_path)
+        for engine, data in results.items():
+            if data['confidence'] > best_confidence:
+                best_confidence = data['confidence']
+                best_engine = engine
         
-        # 結果の要約
-        success_count = sum(1 for r in results if 'error' not in r)
-        print(f"\n処理完了: {success_count}/{len(results)} ファイルが正常に処理されました")
+        if best_engine is None:
+            self.logger.warning("有効なOCR結果が見つかりませんでした")
+            return {}, 0.0, ""
         
-        # エラーがあれば表示
-        errors = [r for r in results if 'error' in r]
-        if errors:
-            print("\nエラーが発生したファイル:")
-            for error in errors:
-                print(f"- {error['file_name']}: {error['error']}")
-    
-    else:
-        print(f"エラー: 指定されたパスが存在しません: {input_path}")
-        sys.exit(1)
+        self.logger.info(f"最良の結果: {best_engine} (信頼度: {best_confidence:.2f})")
+        
+        # ベースとなる結果
+        base_result = results[best_engine]['data']
+        base_text = results[best_engine]['text']
+        
+        # 各フィールドで最も信頼性の高い値を採用してマージ
+        important_fields = ['property_number', 'address', 'lot_number', 'area', 'owner_name', 'owner_address', 'registration_date']
+        merged_result = base_result.copy()
+        
+        for field in important_fields:
+            best_field_value = None
+            best_field_confidence = 0.0
+            
+            for engine, data in results.items():
+                engine_data = data['data']
+                engine_confidence = data['confidence']
+                
+                if field in engine_data and engine_data[field]:
+                    # フィールド固有の信頼度評価（一時的なもの）
+                    field_confidence = engine_confidence
+                    
+                    # 特定フィールドの評価を調整
+                    if field == 'property_number' and engine == 'high_quality':
+                        field_confidence *= 1.2  # 高精度処理は不動産番号に強い
+                    elif field == 'registration_date' and engine == 'japanese':
+                        field_confidence *= 1.1  # 日本語処理は日付に強い
+                    elif field == 'owner_name' and engine == 'openai':
+                        field_confidence *= 1.3  # OpenAIは名前認識に強い
+                    
+                    if field_confidence > best_field_confidence:
+                        best_field_confidence = field_confidence
+                        best_field_value = engine_data[field]
+            
+            if best_field_value:
+                merged_result[field] = best_field_value
+        
+        # 抵当権情報の統合（最も詳細なものを採用）
+        if 'mortgage_rights' in base_result:
+            best_mortgage_rights = base_result['mortgage_rights']
+            best_mortgage_count = len(best_mortgage_rights)
+            
+            for engine, data in results.items():
+                if engine == best_engine:
+                    continue
+                
+                engine_data = data['data']
+                if 'mortgage_rights' in engine_data:
+                    engine_mortgage_rights = engine_data['mortgage_rights']
+                    engine_mortgage_count = len(engine_mortgage_rights)
+                    
+                    if engine_mortgage_count > best_mortgage_count:
+                        best_mortgage_rights = engine_mortgage_rights
+                        best_mortgage_count = engine_mortgage_count
+            
+            merged_result['mortgage_rights'] = best_mortgage_rights
+        
+        # 最終結果の信頼度を再計算
+        final_confidence = self._calculate_confidence(merged_result)
+        
+        self.logger.info(f"ハイブリッドOCR処理完了: 最終信頼度 {final_confidence:.2f}")
+        
+        return merged_result, final_confidence, base_text

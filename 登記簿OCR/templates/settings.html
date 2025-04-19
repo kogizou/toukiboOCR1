@@ -355,6 +355,87 @@
                                         <div class="settings-info">LSTMエンジンは日本語認識に優れています。</div>
                                     </div>
                                 </div>
+                                
+                                <h3>精度向上オプション</h3>
+                                
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="use_hybrid_approach" name="use_hybrid_approach" {% if settings.use_hybrid_approach %}checked{% endif %}>
+                                            <label class="form-check-label" for="use_hybrid_approach">複合OCRアプローチを使用</label>
+                                        </div>
+                                        <div class="settings-info">複数のOCR処理を実行して最適な結果を組み合わせます。精度が向上しますが処理時間が長くなります。</div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="enhance_preprocessing" name="enhance_preprocessing" {% if settings.enhance_preprocessing %}checked{% endif %}>
+                                            <label class="form-check-label" for="enhance_preprocessing">前処理強化</label>
+                                        </div>
+                                        <div class="settings-info">画像の前処理（コントラスト調整、ノイズ除去など）を強化します。</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="detect_orientation" name="detect_orientation" {% if settings.detect_orientation %}checked{% endif %}>
+                                            <label class="form-check-label" for="detect_orientation">自動方向検出</label>
+                                        </div>
+                                        <div class="settings-info">横書き・縦書きを自動的に検出して最適な設定を適用します。</div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="optimize_japanese" name="optimize_japanese" {% if settings.optimize_japanese %}checked{% endif %}>
+                                            <label class="form-check-label" for="optimize_japanese">日本語最適化</label>
+                                        </div>
+                                        <div class="settings-info">日本語特有の文字認識に特化した設定を適用します。</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="remove_lines" name="remove_lines" {% if settings.remove_lines %}checked{% endif %}>
+                                            <label class="form-check-label" for="remove_lines">線の除去</label>
+                                        </div>
+                                        <div class="settings-info">表の罫線や境界線を除去して文字認識精度を向上させます。</div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="contrast_enhancement" name="contrast_enhancement" {% if settings.contrast_enhancement %}checked{% endif %}>
+                                            <label class="form-check-label" for="contrast_enhancement">コントラスト強化</label>
+                                        </div>
+                                        <div class="settings-info">画像のコントラストを強化して文字を鮮明にします。</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <label for="denoise_level" class="form-label">ノイズ除去レベル</label>
+                                        <select class="form-select" id="denoise_level" name="denoise_level">
+                                            <option value="0" {% if settings.denoise_level == 0 %}selected{% endif %}>無効</option>
+                                            <option value="1" {% if settings.denoise_level == 1 %}selected{% endif %}>弱 (低品質画像向け)</option>
+                                            <option value="2" {% if settings.denoise_level == 2 %}selected{% endif %}>中 (一般的)</option>
+                                            <option value="3" {% if settings.denoise_level == 3 %}selected{% endif %}>強 (ノイズが多い画像向け)</option>
+                                        </select>
+                                        <div class="settings-info">画像のノイズ（斑点など）を除去するレベルを設定します。</div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="edge_enhancement" name="edge_enhancement" {% if settings.edge_enhancement %}checked{% endif %}>
+                                            <label class="form-check-label" for="edge_enhancement">エッジ強調</label>
+                                        </div>
+                                        <div class="settings-info">文字のエッジを強調して認識精度を向上させます。</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i> これらの精度向上オプションは組み合わせて使用できます。文書の種類や品質に応じて最適な組み合わせを見つけてください。
+                                </div>
                             </div>
                         </div>
                         

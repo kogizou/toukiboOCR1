@@ -1,0 +1,19 @@
+{
+  "file_name": "2179-12025032402236410.PDF",
+  "processed_at": "2025-04-14 22:59:41",
+  "file_path": "/Users/apple/Desktop/業務効率化/登記簿OCR/uploads/2179-12025032402236410.PDF",
+  "text": "\n            Tesseractがインストールされていないため、OCR処理ができません。\n            Tesseractをインストールするか、別の方法でテキスト抽出を行ってください。\n            \n            Tesseractのインストール方法:\n            - MacOS: brew install tesseract tesseract-lang\n            - Windows: https://github.com/UB-Mannheim/tesseract/wiki からインストーラーをダウンロード\n            - Linux: apt-get install tesseract-ocr libtesseract-dev\n            \n            PDFの変換は正常に完了しています。\n            ",
+  "confidence": 0,
+  "structured_data": {
+    "property_number": "OCR機能が利用できません",
+    "address": "Tesseractがインストールされていません",
+    "lot_number": "",
+    "area": "",
+    "area_unit": "㎡",
+    "owner": {
+      "name": "",
+      "address": ""
+    },
+    "rights": []
+  }
+}
